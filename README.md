@@ -1,1 +1,29 @@
-# Ayoy-Maven-License-Verifier-Plugin
+# Ayoy-License-Verifier-Plugin
+
+When developing commercial software with OSS dependencies its
+very important to verify that you only use dependencies with
+acceptable licenses.
+
+This plugin will verify the licenses of the current 
+project and abort build if requirements are not met.
+
+The plugin is heavily inspired from 
+https://github.com/khmarbaise/Maven-License-Verifier-Plugin
+and was build simply because I could not get any
+attention to pull-requests. 
+
+I also wanted maven 3 support and I had never written
+a maven plugin before, which is a reason in itself. :-)
+
+The instructions for building a maven plugin was found
+here: 
+https://maven.apache.org/guides/plugin/guide-java-plugin-development.html
+
+The instructions for reading dependencies was found
+here:
+https://maven.apache.org/guides/plugin/guide-java-plugin-development.html
+
+To use on command line:
+```bash
+mvn mvn se.ayoy:ayoy-license-verifier-plugin:0.1.0-SNAPSHOT:sayhi
+```
