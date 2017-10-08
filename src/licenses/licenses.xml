@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<licenses>
+    <valid>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <names>
+                <name>The Apache Software License, Version 2.0</name>
+            </names>
+            <urls>
+                <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            </urls>
+        </license>
+        <license>
+            <name>Eclipse Public License, Version 1.0</name>
+            <names>
+                <name>Eclipse Public License, Version 1.0</name>
+            </names>
+            <urls>
+                <url>http://www.eclipse.org/legal/epl-v10.html</url>
+            </urls>
+        </license>
+    </valid>
+</licenses>

@@ -4,6 +4,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
@@ -27,6 +28,12 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     private final ProjectBuilder projectBuilder = null;
 
     /**
+     * If the plugin should be verbose.
+     */
+    @Parameter(property = "verbose", defaultValue = "false")
+    private String verbose;
+
+    /**
      * A list of scopes to exclude. May be used to exclude artifacts with test or provided scope from license check.
      * Example: &lt;configuration&gt; &lt;excludedScopes&gt; &lt;param&gt;test&lt;/param&gt;
      * &lt;param&gt;provided&lt;/param&gt; &lt;/excludedScopes&gt; &lt;/configuration&gt;
@@ -37,7 +44,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
 
-    List<AyoyArtifact> parseArtefacts() {
+    List<AyoyArtifact> parseArtifacts() {
         ArrayList<AyoyArtifact> toReturn = new ArrayList<AyoyArtifact>();
 
         ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
@@ -82,13 +89,20 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     LicenseInfoFile getLicenseInfoFile(String licenseFile) throws MojoExecutionException {
 
         try {
-            LicenseInfoFile file = new LicenseInfoFile(licenseFile);
+            LicenseInfoFile file = new LicenseInfoFile(licenseFile, this.getLog());
             return file;
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException("File "
                     + licenseFile
                     + " could not be found.",
                     e);
+        }
+    }
+
+    boolean verboseBool = false;
+    void logInfoIfVerbose(String message) {
+        if (Boolean.parseBoolean(this.verbose)) {
+            this.getLog().info(message);
         }
     }
 }
