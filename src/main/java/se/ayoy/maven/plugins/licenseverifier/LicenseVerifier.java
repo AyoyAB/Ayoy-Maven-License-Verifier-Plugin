@@ -1,158 +1,57 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
-
-
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.DefaultProjectBuilder;
-import org.apache.maven.project.DefaultProjectBuildingRequest;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.project.ProjectBuildingException;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.repository.RepositorySystem;
-import org.codehaus.mojo.license.api.DependenciesTool;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.RemoteRepository;
+import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfo;
+import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
+import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 /**
- * Says "Hi" to the user.
+ * Validate the licenses against a list of known good.
  *
  */
-@Mojo( name = "sayhi")
-public class LicenseVerifier extends AbstractMojo
-{
-
-    private static final Locale LOCALE = Locale.ENGLISH;
-    /**
-     * This is the repo system required by Aether
-     *
-     * For more, visit http://blog.sonatype.com/people/2011/01/how-to-use-aether-in-maven-plugins/
-     */
-    @Component
-    RepositorySystem repoSystem;
-
-    @Component
-    final MavenProject project = null;
+@Mojo( name = "verify")
+public class LicenseVerifier extends LicenseAbstractMojo {
 
     /**
-     * The current repository and network configuration of Maven
-     *
-     * For more, visit http://blog.sonatype.com/people/2011/01/how-to-use-aether-in-maven-plugins/
-     *
-     * @readonly
-     */
-    @Parameter(defaultValue = "${repositorySystemSession}")
-    RepositorySystemSession repoSession;
-
-    /**
-     * This is the project's remote repositories that can be used for resolving plugins and their dependencies
-     */
-    @Parameter(defaultValue = "${project.remotePluginRepositories}")
-    List<RemoteRepository> remoteRepos;
-
-    /**
-     * This is the maximum number of parents to search through (in case there's a malformed pom).
-     */
-    @Parameter(property = "os-check.recursion-limit", defaultValue = "12")
-    int maxSearchDepth;
-
-    /**
-     * A list of artifacts that should be excluded from consideration. Example: &lt;configuration&gt; &lt;excludes&gt;
-     * &lt;param&gt;full:artifact:coords&lt;/param&gt;>
-     * &lt;/excludes&gt; &lt;/configuration&gt;
-     */
-    @Parameter(property = "os-check.excludes")
-    String[] excludes;
-
-    /**
-     * A list of artifacts that should be excluded from consideration. Example: &lt;configuration&gt;
-     * &lt;excludesRegex&gt; &lt;param&gt;full:artifact:coords&lt;/param&gt;>
-     * &lt;/excludesRegex&gt; &lt;/configuration&gt;
-     */
-    @Parameter(property = "os-check.excludesRegex")
-    String[] excludesRegex;
-
-    @Parameter(property = "os-check.excludesNoLicense")
-    boolean excludeNoLicense;
-
-    /**
-     * A list of blacklisted licenses. Example: &lt;configuration&gt; &lt;blacklist&gt;
-     * &lt;param&gt;agpl-3.0&lt;/param&gt; &lt;param&gt;gpl-2.0&lt;/param&gt;
-     * &lt;param&gt;gpl-3.0&lt;/param&gt; &lt;/blacklist&gt; &lt;/configuration&gt;
-     */
-    @Parameter(property = "os-check.blacklist")
-    String[] blacklist;
-
-    /**
-     * A list of whitelisted licenses. Example: &lt;configuration&gt; &lt;whitelist&gt;
-     * &lt;param&gt;agpl-3.0&lt;/param&gt; &lt;param&gt;gpl-2.0&lt;/param&gt;
-     * &lt;param&gt;gpl-3.0&lt;/param&gt; &lt;/blacklist&gt; &lt;/configuration&gt;
-     */
-    @Parameter(property = "os-check.whitelist")
-    String[] whitelist;
-
-    /**
-     * A list of scopes to exclude. May be used to exclude artifacts with test or provided scope from license check.
+     * A filename to the file with info on approved licenses.
      * Example: &lt;configuration&gt; &lt;excludedScopes&gt; &lt;param&gt;test&lt;/param&gt;
      * &lt;param&gt;provided&lt;/param&gt; &lt;/excludedScopes&gt; &lt;/configuration&gt;
      */
-    @Parameter(property = "os-check.excludedScopes")
-    String[] excludedScopes;
+    @Parameter(property = "verify.licenseFile", defaultValue = "src/licenses/licenses.xml")
+    String licenseFile;
 
+    public void execute() throws MojoExecutionException {
 
-    /**
-     * dependencies tool.
-     *
-     * @since 1.1
-     */
-    @Component
-    private DependenciesTool dependenciesTool;
+        LicenseInfoFile file = this.getLicenseInfoFile(this.licenseFile);
 
-    @Parameter(defaultValue = "${session}", readonly = true, required = true)
-    private MavenSession session;
+        getLog().info( "Parsing dependencies.");
+        List<AyoyArtifact> artefacts = parseArtefacts();
 
-    /**
-     * Used to hold the list of license descriptors. Generation is lazy on the first method call to use it.
-     */
-    //List<LicenseDescriptor> descriptors = null;
+        getLog().info("Found "
+                + artefacts.size()
+                + " artefacts. Now validating their licenses with the list.");
 
-    @Component
-    private ProjectBuilder projectBuilder;
+        for (AyoyArtifact artefact : artefacts) {
+            ArrayList<LicenseInfo> thisLicenseInfos = new ArrayList<LicenseInfo>();
+            for (License license : artefact.getLicenses()) {
+                LicenseInfo info = file.getLicenseInfo(license.getName(), license.getUrl());
 
-    public void execute() throws MojoExecutionException
-    {
-        getLog().info( "Hello, world." );
-
-        getLog().info( "." );
-        getLog().info( "Hello, my dependencies" );
-
-        ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
-
-        final Set<Artifact> artifacts = project.getDependencyArtifacts();
-        for (final Artifact artifact : artifacts) {
-            getLog().info(artifact.toString());
-            try {
-                buildingRequest.setProject(null);
-
-                MavenProject mavenProject = projectBuilder.build(artifact, buildingRequest).getProject();
-                final List<License> licenses = mavenProject.getLicenses();
-                for (final License license : licenses) {
-                    getLog().info("    " + license.getName());
-                    getLog().info("    " + license.getUrl());
+                if (info == null) {
+                    throw new MojoExecutionException("Unknown license for "
+                        + artefact.getArtifact().getGroupId() + ":"
+                        + artefact.getArtifact().getArtifactId()
+                        + " - "
+                        + "\""
+                        + license.getName()
+                        + "\", "
+                        + license.getUrl());
                 }
-            } catch (ProjectBuildingException e) {
-                getLog().error(e.getMessage());
             }
         }
     }
