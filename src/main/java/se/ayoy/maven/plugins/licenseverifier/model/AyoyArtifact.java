@@ -39,16 +39,19 @@ public class AyoyArtifact {
 
         toReturn.append("artifact " );
         toReturn.append(this.artifact);
-        toReturn.append(" with licenses: ");
 
-        boolean firstLic = true;
-        for (License license : this.licenses) {
-            if (!firstLic) {
-                toReturn.append(", ");
+        if (this.licenses.size() > 0) {
+            toReturn.append(" with licenses: ");
+
+            boolean firstLic = true;
+            for (License license : this.licenses) {
+                if (!firstLic) {
+                    toReturn.append(", ");
+                }
+
+                firstLic = false;
+                toReturn.append(license);
             }
-
-            firstLic = false;
-            toReturn.append(license);
         }
 
         return toReturn.toString();

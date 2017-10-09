@@ -109,7 +109,6 @@ public class LicenseVerifierMojoTest {
         licenses.add(license);
 
         licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
-        licenseVerifierMojo.verbose = "true";
 
         // Act
         licenseVerifierMojo.execute();
@@ -235,8 +234,8 @@ public class LicenseVerifierMojoTest {
         license.setUrl("http://www.ayoy.org/licenses/FORBIDDEN");
         licenses.add(license);
         license = new License();
-        license.setName("The Forbidden License");
-        license.setUrl("http://www.ayoy.org/licenses/FORBIDDEN");
+        license.setName("The Apache Software License, Version 2.0");
+        license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
         licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
 

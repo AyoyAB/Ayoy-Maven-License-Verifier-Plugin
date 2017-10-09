@@ -13,7 +13,6 @@ import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -74,11 +73,14 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
             boolean hasWarning = false;
             boolean hasForbidden = false;
             boolean hasNoLicense = false;
-            ArrayList<LicenseInfo> thisLicenseInfos = new ArrayList<LicenseInfo>();
 
             for (AyoyArtifact artifact : artifacts) {
                 logInfoIfVerbose("Artifact: " + artifact);
                 boolean artifactHasNoLicense = true;
+                boolean artifactHasValidLicense = false;
+                boolean artifactHasForbiddenLicense = false;
+                boolean artifactHasWarningLicense = false;
+                boolean artifactHasUnknownLicense = false;
                 for (License license : artifact.getLicenses()) {
                     artifactHasNoLicense = false;
                     logInfoIfVerbose("    Checking license: " + LogHelper.logLicense(license));
@@ -97,35 +99,51 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
                     switch (info.getStatus()) {
                         case VALID:
-                            hasValid = true;
-                            logInfoIfVerbose("VALID      artifact: " + artifact);
+                            artifactHasValidLicense = true;
+                            logInfoIfVerbose("VALID      " + artifact);
                             logInfoIfVerbose("           license:  " + info);
                             break;
                         case WARNING:
-                            hasWarning = true;
-                            getLog().warn("WARNING   artifact: " + artifact);
+                            artifactHasWarningLicense = true;
+                            getLog().warn("WARNING   " + artifact);
                             getLog().warn("          license:  " + info);
                             break;
                         case FORBIDDEN:
-                            hasForbidden = true;
-                            getLog().warn("FORBIDDEN artifact: " + artifact);
+                            artifactHasForbiddenLicense = true;
+                            getLog().warn("FORBIDDEN " + artifact);
                             getLog().warn("          license:  " + info);
                             break;
                         case UNKNOWN:
-                            hasUnknown = true;
-                            getLog().warn("UNKNOWN   artifact: " + artifact);
+                            artifactHasUnknownLicense = true;
+                            getLog().warn("UNKNOWN   " + artifact);
                             getLog().warn("          license:  " + info);
                             break;
                         default:
                             throw new MojoExecutionException("Unknown license status for " + artifact);
                     }
-
-                    thisLicenseInfos.add(info);
                 }
 
                 if (artifactHasNoLicense) {
-                    getLog().warn("MISSING   artifact: " + artifact);
+                    getLog().warn("MISSING   " + artifact);
                     hasNoLicense = true;
+                }
+
+                if (artifactHasValidLicense) {
+                    hasValid = true;
+                }
+
+                if (requireAllValidBool || (!requireAllValidBool && !hasValid)) {
+                    if (artifactHasForbiddenLicense) {
+                        hasForbidden = true;
+                    }
+
+                    if (artifactHasWarningLicense) {
+                        hasWarning = true;
+                    }
+
+                    if (artifactHasUnknownLicense) {
+                        hasUnknown = true;
+                    }
                 }
             }
 
