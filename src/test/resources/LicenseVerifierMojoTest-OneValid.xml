@@ -11,15 +11,26 @@
             </urls>
         </license>
     </valid>
-    <invalid>
+    <warning>
         <license>
-            <name>GNU General Public License version 2</name>
+            <name>The Warning License</name>
             <names>
-                <name>GNU General Public License version 2</name>
+                <name>The Warning License</name>
             </names>
             <urls>
-                <url>https://opensource.org/licenses/gpl-2.0.php</url>
+                <url>http://www.ayoy.org/licenses/WARNING</url>
             </urls>
         </license>
-    </invalid>
+    </warning>
+    <forbidden>
+        <license>
+            <name>The Forbidden License</name>
+            <names>
+                <name>The Forbidden License</name>
+            </names>
+            <urls>
+                <url>http://www.ayoy.org/licenses/FORBIDDEN</url>
+            </urls>
+        </license>
+    </forbidden>
 </licenses>

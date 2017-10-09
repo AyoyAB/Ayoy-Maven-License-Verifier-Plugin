@@ -2,9 +2,9 @@ package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.License;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
@@ -22,16 +22,19 @@ import java.util.Set;
 
 abstract class LicenseAbstractMojo extends AbstractMojo {
     @Component
-    private final MavenProject project = null;
+    private MavenProject project = null;
 
     @Component
-    private final ProjectBuilder projectBuilder = null;
+    private ProjectBuilder projectBuilder = null;
+
+    @Parameter(defaultValue = "${session}", readonly = true, required = true)
+    private MavenSession session;
 
     /**
      * If the plugin should be verbose.
      */
     @Parameter(property = "verbose", defaultValue = "false")
-    private String verbose;
+    String verbose = "false";
 
     /**
      * A list of scopes to exclude. May be used to exclude artifacts with test or provided scope from license check.
@@ -41,20 +44,33 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
 
-    @Parameter(defaultValue = "${session}", readonly = true, required = true)
-    private MavenSession session;
+    LicenseAbstractMojo(
+            MavenProject project,
+            ProjectBuilder projectBuilder,
+            MavenSession session) {
+        this.project = project;
+        this.projectBuilder = projectBuilder;
+        this.session = session;
+    }
 
     List<AyoyArtifact> parseArtifacts() {
         ArrayList<AyoyArtifact> toReturn = new ArrayList<AyoyArtifact>();
 
-        ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
+        ProjectBuildingRequest projectBuildingRequest = session.getProjectBuildingRequest();
+        if (projectBuildingRequest == null) {
+            throw new NullPointerException("Got null ProjectBuildingRequest from session.");
+        }
+
+        ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(projectBuildingRequest);
 
         final Set<Artifact> artifacts = project.getDependencyArtifacts();
         for (final Artifact artifact : artifacts) {
             boolean isExcludedScope = false;
-            for(String excludedScope : this.excludedScopes) {
-                if (excludedScope.equals(artifact.getScope())) {
-                    isExcludedScope = true;
+            if (this.excludedScopes != null) {
+                for (String excludedScope : this.excludedScopes) {
+                    if (excludedScope.equals(artifact.getScope())) {
+                        isExcludedScope = true;
+                    }
                 }
             }
 
@@ -75,7 +91,16 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 buildingRequest.setProject(null);
 
                 MavenProject mavenProject = projectBuilder.build(artifact, buildingRequest).getProject();
-                licenseInfo.addLicenses(mavenProject.getLicenses());
+                if (mavenProject == null) {
+                    throw new NullPointerException("MavenProject retrieved from ProjectBuilder.build is null");
+                }
+
+                List<License> licenses = mavenProject.getLicenses();
+                if (licenses == null) {
+                    throw new NullPointerException("Licenses is null, from mavenProject from " + artifact);
+                }
+
+                licenseInfo.addLicenses(licenses);
 
                 toReturn.add(licenseInfo);
             } catch (ProjectBuildingException e) {
@@ -99,10 +124,27 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
     }
 
-    boolean verboseBool = false;
     void logInfoIfVerbose(String message) {
         if (Boolean.parseBoolean(this.verbose)) {
             this.getLog().info(message);
+        }
+    }
+
+    void checkInjects() {
+        if (this.project == null) {
+            throw new NullPointerException("project cannot be null.");
+        }
+
+        if (this.projectBuilder == null) {
+            throw new NullPointerException("projectBuilder cannot be null");
+        }
+
+        if (this.verbose == null) {
+            throw new NullPointerException("verbose cannot be null");
+        }
+
+        if (this.session == null) {
+            throw new NullPointerException("session cannot be null");
         }
     }
 }

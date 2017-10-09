@@ -85,7 +85,7 @@ public class LicenseInfoFile {
         log.debug("Parsing document for " + nodeName);
         NodeList approvedList = document.getDocumentElement().getElementsByTagName(nodeName);
         if (approvedList.getLength() == 0) {
-            log.debug("There is no nodes for " + nodeName);
+            log.debug("There are no nodes for \"" + nodeName + "\".");
             return;
         }
 
