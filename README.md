@@ -1,5 +1,8 @@
 # Ayoy-License-Verifier-Plugin
 
+Build status: 
+![alt text](https://travis-ci.org/AyoyAB/Maven-License-Verifier-Plugin.svg?branch=master "CI status")
+
 When developing commercial software with OSS dependencies its
 very important to verify that you only use dependencies with
 acceptable licenses.
