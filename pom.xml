@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>se.ayoy</groupId>
+    <groupId>se.ayoy.maven-plugins</groupId>
     <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
     <version>1.0.0</version>
     <packaging>maven-plugin</packaging>
@@ -46,9 +46,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git</connection>
-        <developerConnection>scm:git:ssh://github.com:AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git</developerConnection>
-        <url>http://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin/tree/master</url>
+        <connection>https://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git</connection>
+        <developerConnection>https://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git</developerConnection>
+        <url>https://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git</url>
     </scm>
 
     <distributionManagement>
@@ -148,6 +148,10 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <keyname>${gpg.keyname}</keyname>
+
+                </configuration>
             </plugin>
 
             <!-- plugin to publish the project -->
