@@ -28,10 +28,10 @@ https://maven.apache.org/guides/plugin/guide-java-plugin-development.html
 
 To use on command line:
 ```bash
-mvn se.ayoy:ayoy-license-verifier-maven-plugin:0.1.0-SNAPSHOT:sayhi
+mvn se.ayoy:ayoy-license-verifier-maven-plugin:1.0.0:verify
 ```
 
 This should work but doesn't:
 ```bash
-mvn ayoy-license-verifier:0.1.0-SNAPSHOT:sayhi
+mvn ayoy-license-verifier:1.0.0:verify
 ```
