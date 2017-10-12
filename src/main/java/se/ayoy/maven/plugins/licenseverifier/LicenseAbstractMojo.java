@@ -16,6 +16,8 @@ import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 
 import java.io.FileNotFoundException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -117,8 +119,13 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             LicenseInfoFile file = new LicenseInfoFile(licenseFile, this.getLog());
             return file;
         } catch (FileNotFoundException e) {
-            throw new MojoExecutionException("File "
+
+            Path filePath = Paths.get(licenseFile);
+            throw new MojoExecutionException("File \""
                     + licenseFile
+                    + "\" (expanded to \""
+                    + filePath.toAbsolutePath()
+                    + "\")"
                     + " could not be found.",
                     e);
         }

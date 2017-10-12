@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -94,8 +95,11 @@ public class LicenseVerifierMojoTest {
             licenseVerifierMojo.execute();
             fail();
         } catch (org.apache.maven.plugin.MojoExecutionException exc) {
+            String message = exc.getMessage();
+            System.out.println("GURKA: " + message);
             // Verify
-            assertEquals("File thisFileDoesntExist.xml could not be found.", exc.getMessage());
+            assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
+            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin/thisFileDoesntExist.xml\") could not be found."));
         }
     }
 
