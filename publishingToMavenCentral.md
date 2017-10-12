@@ -79,3 +79,8 @@ mvn clean deploy -Prelease
 ```bash
 mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
 ```
+
+To delete a version from the repository:
+```bash
+curl -I --request DELETE --user username:password https://oss.sonatype.org/service/local/staging/deploy/maven2/se/ayoy/ayoy-license-verifier-maven-plugin/1.0.0
+```
