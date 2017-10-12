@@ -72,7 +72,7 @@ mvn versions:set -DnewVersion=1.0.0
 
 7. Run the following command
 ```bash
-mvn clean deploy -DperformRelease=true 
+mvn clean deploy -Prelease
 ```
 
 8. Restore version to SNAPSHOT:
