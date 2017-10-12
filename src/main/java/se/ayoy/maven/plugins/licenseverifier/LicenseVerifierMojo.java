@@ -13,6 +13,7 @@ import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
+import javax.inject.Inject;
 import java.util.List;
 
 /**
@@ -50,7 +51,8 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
     String requireAllValid = "true";
     private boolean requireAllValidBool;
 
-    LicenseVerifierMojo(MavenProject project, ProjectBuilder projectBuilder, MavenSession session) {
+    @Inject
+    public LicenseVerifierMojo(MavenProject project, ProjectBuilder projectBuilder, MavenSession session) {
         super(project, projectBuilder, session);
     }
 
