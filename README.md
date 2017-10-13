@@ -2,8 +2,7 @@
 
 Build status: 
 ![alt text](https://travis-ci.org/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.svg?branch=master "CI status")
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/cz.jirutka.rsql/rsql-parser/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cz.jirutka.rsql/rsql-parser)
-[![Dependency Status](https://gemnasium.com/badges/github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.svg)](https://gemnasium.com/github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/se.ayoy.maven-plugins/ayoy-license-verifier-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/se.ayoy.maven-plugins/ayoy-license-verifier-maven-plugin)
 
 When developing commercial software with OSS dependencies its
 very important to verify that you only use dependencies with
