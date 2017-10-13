@@ -124,7 +124,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             throw new MojoExecutionException("File \""
                     + licenseFile
                     + "\" (expanded to \""
-                    + filePath.toAbsolutePath()
+                    + filePath.toAbsolutePath().normalize()
                     + "\")"
                     + " could not be found.",
                     e);
