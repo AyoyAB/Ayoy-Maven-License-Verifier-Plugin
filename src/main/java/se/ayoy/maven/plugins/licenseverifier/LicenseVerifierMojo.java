@@ -134,7 +134,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                     hasValid = true;
                 }
 
-                if (requireAllValidBool || (!requireAllValidBool && !hasValid)) {
+                if (requireAllValidBool || !requireAllValidBool && !hasValid) {
                     if (artifactHasForbiddenLicense) {
                         hasForbidden = true;
                     }
