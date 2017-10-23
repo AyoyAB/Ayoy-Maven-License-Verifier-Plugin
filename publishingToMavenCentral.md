@@ -68,6 +68,8 @@ gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
 mvn versions:set -DnewVersion=1.0.0
 ```
 
+and update README.md with the new version.
+
 6. Commit and push changes and check travis build status.
 
 7. Run the following command
@@ -78,9 +80,4 @@ mvn clean deploy -Prelease
 8. Restore version to SNAPSHOT:
 ```bash
 mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
-```
-
-To delete a version from the repository:
-```bash
-curl -I --request DELETE --user username:password https://oss.sonatype.org/service/local/staging/deploy/maven2/se/ayoy/ayoy-license-verifier-maven-plugin/1.0.0
 ```

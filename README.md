@@ -20,3 +20,26 @@ To use on command line:
 ```bash
 mvn se.ayoy.maven-plugins:ayoy-license-verifier-maven-plugin:verify
 ```
+
+To use in maven pom file:
+```xml
+<plugin>
+    <groupId>se.ayoy.maven-plugins</groupId>
+    <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
+    <version>1.0.1</version>
+    <executions>
+        <execution>
+            <phase>compile</phase>
+            <goals>
+                <goal>verify</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <licenseFile>${project.parent.basedir}/licenses/licenses.xml</licenseFile>
+        <failOnForbidden>true</failOnForbidden>
+        <failOnMissing>true</failOnMissing>
+        <failOnUnknown>true</failOnUnknown>
+    </configuration>
+</plugin>
+```
