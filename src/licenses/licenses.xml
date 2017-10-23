@@ -29,7 +29,7 @@
             </urls>
         </license>
     </valid>
-    <invalid>
+    <forbidden>
         <license>
             <name>GNU General Public License version 2</name>
             <names>
@@ -39,5 +39,5 @@
                 <url>https://opensource.org/licenses/gpl-2.0.php</url>
             </urls>
         </license>
-    </invalid>
+    </forbidden>
 </licenses>
