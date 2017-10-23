@@ -5,6 +5,7 @@ import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
@@ -30,6 +31,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseVerifierMojoTest {
+
+    @Mock
+    private Log log;
 
     @Mock
     private MavenProject project;
@@ -70,6 +74,7 @@ public class LicenseVerifierMojoTest {
         when(this.project.getLicenses()).thenReturn(licenses);
 
         this.licenseVerifierMojo = new LicenseVerifierMojo(this.project, this.projectBuilder, this.session);
+        this.licenseVerifierMojo.setLog(log);
     }
 
     @Test
