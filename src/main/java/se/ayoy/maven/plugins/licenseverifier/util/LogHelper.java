@@ -2,7 +2,18 @@ package se.ayoy.maven.plugins.licenseverifier.util;
 
 import org.apache.maven.model.License;
 
-public class LogHelper {
+/**
+ * A small utility to simpler log strings.
+ */
+public final class LogHelper {
+    private LogHelper() {
+    }
+
+    /**
+     * Log a license.
+     * @param license the license to log.
+     * @return the string representation of the license, suitable for logging.
+     */
     public static String logLicense(License license) {
         if (license == null) {
             return "(null)";
@@ -21,7 +32,7 @@ public class LogHelper {
 
         toReturn.append(", ");
 
-        if (license.getUrl() == null){
+        if (license.getUrl() == null) {
             toReturn.append("(null)");
         } else {
             toReturn.append("\"");
@@ -33,6 +44,11 @@ public class LogHelper {
         return toReturn.toString();
     }
 
+    /**
+     * Log a nullable string.
+     * @param toLog the string to log.
+     * @return the string representation of the string, suitable for logging.
+     */
     public static String logNullableString(String toLog) {
         if (toLog == null) {
             return "(null)";

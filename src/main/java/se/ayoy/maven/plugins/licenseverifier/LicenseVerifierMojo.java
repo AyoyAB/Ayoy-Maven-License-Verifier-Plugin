@@ -20,7 +20,7 @@ import java.util.List;
  * Validate the licenses against a list of known good.
  *
  */
-@Mojo( name = "verify")
+@Mojo(name = "verify")
 public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
     /**
@@ -29,37 +29,66 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
      * &lt;param&gt;provided&lt;/param&gt; &lt;/excludedScopes&gt; &lt;/configuration&gt;
      */
     @Parameter(property = "verify.licenseFile", defaultValue = "src/licenses/licenses.xml")
-    String licenseFile;
+    private String licenseFile;
 
     @Parameter(property = "verify.failOnForbidden", defaultValue = "true")
-    String failOnForbidden = "true";
-    private boolean failOnForbiddenBool;
+    private boolean failOnForbidden = true;
 
     @Parameter(property = "verify.failOnMissing", defaultValue = "true")
-    String failOnMissing = "true";
-    private boolean failOnMissingBool;
+    private boolean failOnMissing = true;
 
     @Parameter(property = "verify.failOnWarning", defaultValue = "true")
-    String failOnWarning = "true";
-    private boolean failOnWarningBool;
+    private boolean failOnWarning = true;
 
     @Parameter(property = "verify.failOnUnknown", defaultValue = "true")
-    String failOnUnknown = "true";
-    private boolean failOnUnknownBool;
+    private boolean failOnUnknown = true;
 
     @Parameter(property = "verify.requireAllValid", defaultValue = "true")
-    String requireAllValid = "true";
-    private boolean requireAllValidBool;
+    private boolean requireAllValid = true;
 
+    /**
+     * Initialize the instance.
+     * @param project        The project which the plugin is part of.
+     * @param projectBuilder The project builder to retrieve more information.
+     * @param session        The maven session.
+     */
     @Inject
     public LicenseVerifierMojo(MavenProject project, ProjectBuilder projectBuilder, MavenSession session) {
         super(project, projectBuilder, session);
     }
 
+    public void setLicenseFile(String licenseFile) {
+        this.licenseFile = licenseFile;
+    }
+
+    public void setFailOnForbidden(String failOnForbidden) {
+        this.failOnForbidden = Boolean.parseBoolean(failOnForbidden);
+    }
+
+    public void setFailOnMissing(String failOnMissing) {
+        this.failOnMissing = Boolean.parseBoolean(failOnMissing);
+    }
+
+    public void setFailOnWarning(String failOnWarning) {
+        this.failOnWarning = Boolean.parseBoolean(failOnWarning);
+    }
+
+    public void setFailOnUnknown(String failOnUnknown) {
+        this.failOnUnknown = Boolean.parseBoolean(failOnUnknown);
+    }
+
+    public void setRequireAllValid(String requireAllValid) {
+        this.requireAllValid = Boolean.parseBoolean(requireAllValid);
+    }
+
+    /**
+     * Execute the plugin.
+     * @throws MojoExecutionException   if anything goes south,
+     *                                  the thrown exception is always MojoExecutionException.
+     */
     public void execute() throws MojoExecutionException {
         try {
             checkInjects();
-            parseParameters();
 
             LicenseInfoFile file = this.getLicenseInfoFile(this.licenseFile);
 
@@ -134,7 +163,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                     hasValid = true;
                 }
 
-                if (requireAllValidBool || !requireAllValidBool && !hasValid) {
+                if (requireAllValid || !requireAllValid && !hasValid) {
                     if (artifactHasForbiddenLicense) {
                         hasForbidden = true;
                     }
@@ -149,22 +178,22 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 }
             }
 
-            if (failOnMissingBool && hasNoLicense) {
+            if (failOnMissing && hasNoLicense) {
                 throw new MojoExecutionException(
                         "One or more artifacts is missing license information.");
             }
 
-            if (failOnWarningBool && hasWarning) {
+            if (failOnWarning && hasWarning) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is classified as warning.");
             }
 
-            if (failOnUnknownBool && hasUnknown) {
+            if (failOnUnknown && hasUnknown) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is unclassified.");
             }
 
-            if (failOnForbiddenBool && hasForbidden) {
+            if (failOnForbidden && hasForbidden) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is classified as forbidden.");
             }
@@ -184,18 +213,5 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         if (this.licenseFile == null) {
             throw new NullPointerException("licenseFile cannot be null. Check your settings.");
         }
-    }
-
-
-    private void parseParameters() {
-        this.failOnForbiddenBool = Boolean.parseBoolean(this.failOnForbidden);
-
-        this.failOnMissingBool = Boolean.parseBoolean(this.failOnMissing);
-
-        this.failOnWarningBool = Boolean.parseBoolean(this.failOnWarning);
-
-        this.failOnUnknownBool = Boolean.parseBoolean(this.failOnUnknown);
-
-        this.requireAllValidBool = Boolean.parseBoolean(this.requireAllValid);
     }
 }

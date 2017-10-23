@@ -2,13 +2,6 @@ package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.ArtifactHandler;
-import org.apache.maven.artifact.metadata.ArtifactMetadata;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.OverConstrainedVersionException;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -20,14 +13,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,9 +30,6 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseVerifierMojoTest {
-
-    @Mock
-    private LicenseInfoFile licenseInfoFile;
 
     @Mock
     private MavenProject project;
@@ -62,9 +49,9 @@ public class LicenseVerifierMojoTest {
     @InjectMocks
     private LicenseVerifierMojo licenseVerifierMojo;
 
-    Set<Artifact> artifacts = new HashSet<Artifact>();
+    private Set<Artifact> artifacts = new HashSet<Artifact>();
 
-    List<License> licenses = new ArrayList<License>();
+    private List<License> licenses = new ArrayList<License>();
 
     @Before
     public void before() throws Exception {
@@ -88,7 +75,7 @@ public class LicenseVerifierMojoTest {
     @Test
     public void missingFile() throws Exception {
 
-        licenseVerifierMojo.licenseFile = "thisFileDoesntExist.xml";
+        licenseVerifierMojo.setLicenseFile("thisFileDoesntExist.xml");
 
         // Act
         try {
@@ -111,7 +98,7 @@ public class LicenseVerifierMojoTest {
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
 
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         licenseVerifierMojo.execute();
@@ -123,7 +110,7 @@ public class LicenseVerifierMojoTest {
     public void missingLicense() throws Exception {
         this.artifacts.add(this.artifact);
 
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -144,7 +131,7 @@ public class LicenseVerifierMojoTest {
         license.setName("This is some strange license");
         license.setUrl("http://www.ayoy.se/licenses/SUPERSTRANGE.txt");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -165,7 +152,7 @@ public class LicenseVerifierMojoTest {
         license.setName("The Forbidden License");
         license.setUrl("http://www.ayoy.org/licenses/FORBIDDEN");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -186,7 +173,7 @@ public class LicenseVerifierMojoTest {
         license.setName("The Warning License");
         license.setUrl("http://www.ayoy.org/licenses/WARNING");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -213,7 +200,7 @@ public class LicenseVerifierMojoTest {
         license.setName("The Apache Software License, Version 2.0");
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -240,9 +227,9 @@ public class LicenseVerifierMojoTest {
         license.setName("The Apache Software License, Version 2.0");
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
-        licenseVerifierMojo.requireAllValid = "false";
+        licenseVerifierMojo.setRequireAllValid("false");
 
         // Act
         licenseVerifierMojo.execute();

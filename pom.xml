@@ -117,7 +117,8 @@
                 <configuration>
                     <xmlOutput>true</xmlOutput>
                     <!-- Optional directory to put findbugs xdoc xml report -->
-                    <xmlOutputDirectory>target/site</xmlOutputDirectory>
+                    <xmlOutputDirectory>target</xmlOutputDirectory>
+                    <failOnError>true</failOnError>
                 </configuration>
                 <executions>
                     <execution>

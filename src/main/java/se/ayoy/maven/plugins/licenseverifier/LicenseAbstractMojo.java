@@ -36,7 +36,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
      * If the plugin should be verbose.
      */
     @Parameter(property = "verbose", defaultValue = "false")
-    String verbose = "false";
+    private boolean verbose = false;
 
     /**
      * A list of scopes to exclude. May be used to exclude artifacts with test or provided scope from license check.
@@ -113,6 +113,10 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         return toReturn;
     }
 
+    public void setVerbose(String verbose) {
+        this.verbose = Boolean.parseBoolean(verbose);
+    }
+
     LicenseInfoFile getLicenseInfoFile(String licenseFile) throws MojoExecutionException {
 
         try {
@@ -132,7 +136,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     }
 
     void logInfoIfVerbose(String message) {
-        if (Boolean.parseBoolean(this.verbose)) {
+        if (this.verbose) {
             this.getLog().info(message);
         }
     }
@@ -144,10 +148,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
         if (this.projectBuilder == null) {
             throw new NullPointerException("projectBuilder cannot be null");
-        }
-
-        if (this.verbose == null) {
-            throw new NullPointerException("verbose cannot be null");
         }
 
         if (this.session == null) {
