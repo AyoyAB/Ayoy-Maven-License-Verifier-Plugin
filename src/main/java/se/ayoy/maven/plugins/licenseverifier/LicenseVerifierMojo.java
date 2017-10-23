@@ -173,7 +173,6 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         } catch (MojoExecutionException exc) {
             throw exc;
         } catch (Exception exc) {
-            exc.printStackTrace();
             throw new MojoExecutionException(exc.getMessage(), exc);
         }
     }

@@ -96,7 +96,6 @@ public class LicenseVerifierMojoTest {
             fail();
         } catch (org.apache.maven.plugin.MojoExecutionException exc) {
             String message = exc.getMessage();
-            System.out.println("GURKA: " + message);
             // Verify
             assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
             assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin/thisFileDoesntExist.xml\") could not be found."));
