@@ -11,7 +11,7 @@ This plugin will verify the licenses of the current
 project and abort build if requirements are not met.
 
 The plugin is heavily inspired from 
-[https://github.com/khmarbaise/Maven-License-Verifier-Plugin](khmarbaise/Maven-License-Verifier-Plugin). 
+[khmarbaise/Maven-License-Verifier-Plugin](https://github.com/khmarbaise/Maven-License-Verifier-Plugin).
 
 I wanted maven 3 support and I had never written
 a maven plugin before, which is a reason in itself. :-)
