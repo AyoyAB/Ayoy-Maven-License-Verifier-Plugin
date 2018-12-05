@@ -37,6 +37,7 @@ To use in maven pom file:
     </executions>
     <configuration>
         <licenseFile>${project.parent.basedir}/licenses/licenses.xml</licenseFile>
+        <excludedMissingLicensesFile>${project.parent.basedir}/licenses/allowedMissingLicense.xml</excludedMissingLicensesFile>
         <failOnForbidden>true</failOnForbidden>
         <failOnMissing>true</failOnMissing>
         <failOnUnknown>true</failOnUnknown>

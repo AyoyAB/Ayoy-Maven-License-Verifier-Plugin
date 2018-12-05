@@ -129,6 +129,38 @@ public class LicenseVerifierMojoTest {
     }
 
     @Test
+    public void missingExcludedLicenseFile() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+        licenseVerifierMojo.setExcludedMissingLicensesFile("thisFileDoesntExist.xml");
+
+        // Act
+        try {
+            licenseVerifierMojo.execute();
+
+            // Verify
+            fail(); // Not implemented. Should throw exception.
+        } catch (org.apache.maven.plugin.MojoExecutionException exc) {
+            String message = exc.getMessage();
+            // Verify
+            assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
+            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin/thisFileDoesntExist.xml\") could not be found."));
+        }
+    }
+
+    @Test
+    public void missingLicenseButExcluded() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+        licenseVerifierMojo.setExcludedMissingLicensesFile(getFilePath("ExcludedMissingLicense.xml"));
+
+        // Act
+        licenseVerifierMojo.execute();
+    }
+
+    @Test
     public void unknownLicense() throws Exception {
         this.artifacts.add(this.artifact);
 

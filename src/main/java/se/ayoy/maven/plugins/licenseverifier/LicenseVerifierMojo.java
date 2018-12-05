@@ -10,6 +10,7 @@ import org.apache.maven.project.ProjectBuilder;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfo;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
+import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
@@ -30,6 +31,9 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
      */
     @Parameter(property = "verify.licenseFile", defaultValue = "src/licenses/licenses.xml")
     private String licenseFile;
+
+    @Parameter(property = "verify.excludedMissingLicensesFile", defaultValue = "")
+    private String excludedMissingLicensesFile;
 
     @Parameter(property = "verify.failOnForbidden", defaultValue = "true")
     private boolean failOnForbidden = true;
@@ -61,6 +65,10 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         this.licenseFile = licenseFile;
     }
 
+    public void setExcludedMissingLicensesFile(String excludedMissingLicensesFile) {
+        this.excludedMissingLicensesFile = excludedMissingLicensesFile;
+    }
+
     public void setFailOnForbidden(String failOnForbidden) {
         this.failOnForbidden = Boolean.parseBoolean(failOnForbidden);
     }
@@ -90,7 +98,10 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         try {
             checkInjects();
 
-            LicenseInfoFile file = this.getLicenseInfoFile(this.licenseFile);
+            LicenseInfoFile licenseInfoFile = this.getLicenseInfoFile(this.licenseFile);
+
+            ExcludedMissingLicenseFile excludedMissingLicenseFile =
+                this.getExcludedMissingLicensesFile(this.excludedMissingLicensesFile);
 
             getLog().info("Parsing dependencies.");
             List<AyoyArtifact> artifacts = parseArtifacts();
@@ -115,7 +126,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 for (License license : artifact.getLicenses()) {
                     artifactHasNoLicense = false;
                     logInfoIfVerbose("    Checking license: " + LogHelper.logLicense(license));
-                    LicenseInfo info = file.getLicenseInfo(license.getName(), license.getUrl());
+                    LicenseInfo info = licenseInfoFile.getLicenseInfo(license.getName(), license.getUrl());
 
                     if (info == null) {
                         // License does not exist in file.
@@ -123,7 +134,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                                 license.getName(),
                                 license.getUrl(),
                                 LicenseInfoStatusEnum.UNKNOWN);
-                        file.addLicenseInfo(info);
+                        licenseInfoFile.addLicenseInfo(info);
                     }
 
                     logInfoIfVerbose("    Got licenseInfo with status : " + info.getStatus());
@@ -155,8 +166,14 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 }
 
                 if (artifactHasNoLicense) {
-                    getLog().warn("MISSING   " + artifact);
-                    hasNoLicense = true;
+                    if (!excludedMissingLicenseFile.isExcluded(artifact)) {
+                        getLog().warn("MISSING   " + artifact);
+                        hasNoLicense = true;
+                    } else {
+                        getLog().info(
+                            "Artifact is missing license but is explicitly excluded: "
+                                + artifact);
+                    }
                 }
 
                 if (artifactHasValidLicense) {

@@ -13,6 +13,7 @@ import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingRequest;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
+import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 
 import java.io.FileNotFoundException;
@@ -126,12 +127,30 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
             Path filePath = Paths.get(licenseFile);
             throw new MojoExecutionException("File \""
-                    + licenseFile
-                    + "\" (expanded to \""
-                    + filePath.toAbsolutePath().normalize()
-                    + "\")"
-                    + " could not be found.",
-                    e);
+                + licenseFile
+                + "\" (expanded to \""
+                + filePath.toAbsolutePath().normalize()
+                + "\")"
+                + " could not be found.",
+                e);
+        }
+    }
+
+    ExcludedMissingLicenseFile getExcludedMissingLicensesFile(String licenseFile) throws MojoExecutionException {
+
+        try {
+            ExcludedMissingLicenseFile file = new ExcludedMissingLicenseFile(licenseFile, this.getLog());
+            return file;
+        } catch (FileNotFoundException e) {
+
+            Path filePath = Paths.get(licenseFile);
+            throw new MojoExecutionException("File \""
+                + licenseFile
+                + "\" (expanded to \""
+                + filePath.toAbsolutePath().normalize()
+                + "\")"
+                + " could not be found.",
+                e);
         }
     }
 
