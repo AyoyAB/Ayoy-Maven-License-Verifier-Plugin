@@ -113,9 +113,17 @@
 
             <!-- Code analysis plugins -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.5</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>3.1.9</version>
+                <dependencies>
+                    <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+                    <dependency>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>3.1.9</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <xmlOutput>true</xmlOutput>
                     <!-- Optional directory to put findbugs xdoc xml report -->
