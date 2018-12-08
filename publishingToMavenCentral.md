@@ -65,7 +65,7 @@ gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
 
 5. Prepare a release by running the following command:
 ```bash
-mvn versions:set -DnewVersion=1.0.3
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.3
 ```
 
 and update README.md with the new version.
