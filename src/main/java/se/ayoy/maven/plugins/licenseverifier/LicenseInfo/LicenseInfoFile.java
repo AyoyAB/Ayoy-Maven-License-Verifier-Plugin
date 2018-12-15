@@ -38,6 +38,10 @@ public class LicenseInfoFile {
             throw new IllegalArgumentException("The path cannot be null");
         }
 
+        this.log.info(
+                "Path to file with licenses is "
+                        + filePathString);
+
         File file = new File(filePathString);
         if (!file.exists()) {
             throw new FileNotFoundException(filePathString);
