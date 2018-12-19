@@ -192,6 +192,26 @@
                     <configLocation>checkstyle-conf.xml</configLocation>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>se.ayoy.maven-plugins</groupId>
+                <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
+                <version>1.0.3</version>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <licenseFile>${project.basedir}/src/licenses/licenses.xml</licenseFile>
+                    <excludedMissingLicensesFile>${project.basedir}/src/licenses/allowedMissingLicense.xml</excludedMissingLicensesFile>
+                    <failOnForbidden>true</failOnForbidden>
+                    <failOnMissing>true</failOnMissing>
+                    <failOnUnknown>true</failOnUnknown>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>
