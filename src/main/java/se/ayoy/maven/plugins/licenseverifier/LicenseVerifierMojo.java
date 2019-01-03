@@ -98,10 +98,16 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         try {
             checkInjects();
 
-            LicenseInfoFile licenseInfoFile = this.getLicenseInfoFile(this.licenseFile);
+            LicenseInfoFile licenseInfoFile = this.getLicenseInfoFile(
+                    getPathForRelativeFile(
+                            this.licenseFile,
+                            "LicenseInfo"));
 
             ExcludedMissingLicenseFile excludedMissingLicenseFile =
-                this.getExcludedMissingLicensesFile(this.excludedMissingLicensesFile);
+                this.getExcludedMissingLicensesFile(
+                        getPathForRelativeFile(
+                                this.excludedMissingLicensesFile,
+                                "ExcludedMissingLicenses"));
 
             getLog().info("Parsing dependencies.");
             List<AyoyArtifact> artifacts = parseArtifacts();

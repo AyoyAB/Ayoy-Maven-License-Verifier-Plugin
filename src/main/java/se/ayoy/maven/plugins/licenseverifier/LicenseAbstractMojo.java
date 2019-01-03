@@ -16,6 +16,7 @@ import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -172,5 +173,50 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         if (this.session == null) {
             throw new NullPointerException("session cannot be null");
         }
+    }
+
+
+    String getPathForRelativeFile(String filePath, String fileDescription) {
+        if (filePath == null || filePath.startsWith("/")) {
+            // This is not a relative file.
+            return filePath;
+        }
+
+        File tmpFile = new File(filePath);
+        if (tmpFile.exists()) {
+            // Found file relative this project
+            return filePath;
+        }
+
+        // Relative path and not in this project. Perhaps in parent or parent-parent?
+        this.getLog().debug(fileDescription
+                + " - '"
+                + filePath
+                + "' is a relative file but could not be found in current project. Perhaps in parent projects?");
+        String newFilename = filePath;
+        MavenProject parentProject = project;
+        while (!(new File(newFilename).exists())) {
+            parentProject = parentProject.getParent();
+            if (parentProject == null) {
+                // Trying to find parent project but current project is null.
+                return filePath;
+            }
+            if (parentProject.getBasedir() == null) {
+                // Trying to find parent project baseDir but it's null.
+                return filePath;
+            }
+
+            newFilename = parentProject.getBasedir() + "/" + filePath;
+
+            this.getLog().debug(fileDescription + " - Checking for file " + newFilename);
+        }
+
+        if (new File(newFilename).exists()) {
+            return newFilename;
+        }
+
+        this.getLog().warn(fileDescription + " - Could not find file " + filePath);
+
+        return filePath;
     }
 }
