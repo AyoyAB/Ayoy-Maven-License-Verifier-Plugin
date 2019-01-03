@@ -52,27 +52,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <version>0.1</version>
-                <executions>
-                    <execution>
-                        <id>directories</id>
-                        <goals>
-                            <goal>directory-of</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                        <configuration>
-                            <property>directory.root</property>
-                            <project>
-                                <groupId>se.ayoy.maven-plugins.demo</groupId>
-                                <artifactId>demo-parent</artifactId>
-                            </project>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>se.ayoy.maven-plugins</groupId>
                 <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
                 <version>1.0.4-SNAPSHOT</version>
@@ -85,9 +64,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <licenseFile>${directory.root}/licenses/licenses.xml</licenseFile>
-                    <excludedMissingLicensesFile>${directory.root}/licenses/allowedMissingLicense.xml
-                    </excludedMissingLicensesFile>
+                    <licenseFile>licenses/licenses.xml</licenseFile>
+                    <excludedMissingLicensesFile>licenses/allowedMissingLicense.xml</excludedMissingLicensesFile>
                     <failOnForbidden>true</failOnForbidden>
                     <failOnMissing>true</failOnMissing>
                     <failOnUnknown>true</failOnUnknown>
