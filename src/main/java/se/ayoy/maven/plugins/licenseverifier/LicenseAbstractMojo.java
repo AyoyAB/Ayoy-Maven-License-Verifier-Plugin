@@ -206,7 +206,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 return filePath;
             }
 
-            newFilename = parentProject.getBasedir() + "/" + filePath;
+            newFilename = new File(parentProject.getBasedir(), filePath).getPath();
 
             this.getLog().debug(fileDescription + " - Checking for file " + newFilename);
         }
