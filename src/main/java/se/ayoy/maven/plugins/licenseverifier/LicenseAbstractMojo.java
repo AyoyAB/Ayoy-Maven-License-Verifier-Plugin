@@ -1,6 +1,9 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.AbstractMojo;
@@ -12,6 +15,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.repository.RepositorySystem;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
@@ -21,15 +25,36 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 abstract class LicenseAbstractMojo extends AbstractMojo {
     @Component
-    private MavenProject project = null;
+    private MavenProject project;
 
     @Component
-    private ProjectBuilder projectBuilder = null;
+    private ProjectBuilder projectBuilder;
+
+    /**
+     * @since 1.0.4
+     */
+    @Component
+    private RepositorySystem repositorySystem;
+
+    /**
+     * ArtifactRepository of the localRepository directory.
+     * @since 1.0.4
+     */
+    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
+    private ArtifactRepository localRepository;
+
+    /**
+     * The remote plugin repositories declared in the POM.
+     * @since 1.0.4
+     */
+    @Parameter(defaultValue = "${project.pluginArtifactRepositories}")
+    private List<ArtifactRepository> remoteRepositories;
 
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
@@ -69,14 +94,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
         final Set<Artifact> artifacts = project.getDependencyArtifacts();
         for (final Artifact artifact : artifacts) {
-            boolean isExcludedScope = false;
-            if (this.excludedScopes != null) {
-                for (String excludedScope : this.excludedScopes) {
-                    if (excludedScope.equals(artifact.getScope())) {
-                        isExcludedScope = true;
-                    }
-                }
-            }
+            boolean isExcludedScope = matchesAnyScope(artifact, excludedScopes);
 
             if (isExcludedScope) {
                 getLog().info("Artifact is excluded from scope \""
@@ -113,6 +131,17 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
 
         return toReturn;
+    }
+
+    private static boolean matchesAnyScope(Artifact artifact, String... scopes) {
+        if (scopes != null) {
+            for (String scope : scopes) {
+                if (scope.equals(artifact.getScope())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void setVerbose(String verbose) {
@@ -218,5 +247,23 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         this.getLog().warn(fileDescription + " - Could not find file " + filePath);
 
         return filePath;
+    }
+
+    private List<Artifact> resolveArtifact(Artifact providerArtifact) {
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+                .setArtifact(providerArtifact)
+                .setRemoteRepositories(remoteRepositories)
+                .setLocalRepository(localRepository)
+                .setResolveTransitively(true);
+
+        ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
+
+        resolutionResult.getArtifacts().remove(providerArtifact);
+        List<Artifact> artifacts = new ArrayList<>();
+        artifacts.add(providerArtifact);
+        resolutionResult.getArtifacts().removeIf(transitive -> matchesAnyScope(transitive, excludedScopes));
+        artifacts.addAll(resolutionResult.getArtifacts());
+
+        return artifacts;
     }
 }

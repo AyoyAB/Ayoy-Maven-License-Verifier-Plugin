@@ -23,8 +23,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.io.File.separator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -53,15 +55,13 @@ public class LicenseVerifierMojoTest {
     @InjectMocks
     private LicenseVerifierMojo licenseVerifierMojo;
 
-    private Set<Artifact> artifacts = new HashSet<Artifact>();
+    private Set<Artifact> artifacts = new HashSet<>();
 
-    private List<License> licenses = new ArrayList<License>();
+    private List<License> licenses = new ArrayList<>();
 
     @Before
     public void before() throws Exception {
-        if (projectBuildingResult == null) {
-            throw new NullPointerException("Failed to mock projectBuildingResult");
-        }
+        assertNotNull("Failed to mock projectBuildingResult", projectBuildingResult);
 
         this.artifacts.clear();
 
@@ -90,7 +90,8 @@ public class LicenseVerifierMojoTest {
             String message = exc.getMessage();
             // Verify
             assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
-            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin/thisFileDoesntExist.xml\") could not be found."));
+            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin"
+                    + separator + "thisFileDoesntExist.xml\") could not be found."));
         }
     }
 
@@ -145,7 +146,8 @@ public class LicenseVerifierMojoTest {
             String message = exc.getMessage();
             // Verify
             assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
-            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin/thisFileDoesntExist.xml\") could not be found."));
+            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin"
+                    + separator + "thisFileDoesntExist.xml\") could not be found."));
         }
     }
 
