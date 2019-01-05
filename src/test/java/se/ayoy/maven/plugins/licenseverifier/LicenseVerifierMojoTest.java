@@ -73,8 +73,7 @@ public class LicenseVerifierMojoTest {
 
         when(this.project.getLicenses()).thenReturn(licenses);
 
-        this.licenseVerifierMojo = new LicenseVerifierMojo(this.project, this.projectBuilder, this.session);
-        this.licenseVerifierMojo.setLog(log);
+        licenseVerifierMojo.setLog(log);
     }
 
     @Test
