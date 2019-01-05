@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.System.lineSeparator;
+
 abstract class LicenseAbstractMojo extends AbstractMojo {
     @Component
     private MavenProject project;
@@ -96,31 +98,52 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
-            AyoyArtifact licenseInfo = new AyoyArtifact(artifact);
+            toReturn.add(toAyoyArtifact(artifact, buildingRequest));
 
-            getLog().debug("Getting license for " + artifact.toString());
-            try {
-                buildingRequest.setProject(null);
+            Set<Artifact> transitiveArtifacts = resolveTransitiveArtifact(artifact);
 
-                MavenProject mavenProject = projectBuilder.build(artifact, buildingRequest).getProject();
-                if (mavenProject == null) {
-                    throw new NullPointerException("MavenProject retrieved from ProjectBuilder.build is null");
-                }
-
-                List<License> licenses = mavenProject.getLicenses();
-                if (licenses == null) {
-                    throw new NullPointerException("Licenses is null, from mavenProject from " + artifact);
-                }
-
-                licenseInfo.addLicenses(licenses);
-
-                toReturn.add(licenseInfo);
-            } catch (ProjectBuildingException e) {
-                getLog().error(e.getMessage());
+            StringBuilder transitiveArtifactsList = new StringBuilder();
+            for (Artifact transitiveArtifact : transitiveArtifacts) {
+                toReturn.add(toAyoyArtifact(transitiveArtifact, buildingRequest));
+                transitiveArtifactsList.append(lineSeparator())
+                        .append(transitiveArtifact.toString());
+            }
+            if (getLog().isDebugEnabled() && !transitiveArtifacts.isEmpty()) {
+                getLog().debug("Verifying "
+                        + transitiveArtifacts.size()
+                        + " transitive artifacts for "
+                        + artifact.toString()
+                        + ":"
+                        + transitiveArtifactsList
+                );
             }
         }
 
         return toReturn;
+    }
+
+    private AyoyArtifact toAyoyArtifact(Artifact artifact, ProjectBuildingRequest buildingRequest) {
+        AyoyArtifact licenseInfo = new AyoyArtifact(artifact);
+
+        getLog().debug("Getting license for " + artifact.toString());
+        try {
+            buildingRequest.setProject(null);
+
+            MavenProject mavenProject = projectBuilder.build(artifact, buildingRequest).getProject();
+            if (mavenProject == null) {
+                throw new NullPointerException("MavenProject retrieved from ProjectBuilder.build is null");
+            }
+
+            List<License> licenses = mavenProject.getLicenses();
+            if (licenses == null) {
+                throw new NullPointerException("Licenses is null, from mavenProject from " + artifact);
+            }
+
+            licenseInfo.addLicenses(licenses);
+        } catch (ProjectBuildingException e) {
+            getLog().error(e.getMessage());
+        }
+        return licenseInfo;
     }
 
     private static boolean matchesAnyScope(Artifact artifact, String... scopes) {
@@ -239,7 +262,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         return filePath;
     }
 
-    private List<Artifact> resolveArtifact(Artifact providerArtifact) {
+    private Set<Artifact> resolveTransitiveArtifact(Artifact providerArtifact) {
         ArtifactResolutionRequest request = new ArtifactResolutionRequest()
                 .setArtifact(providerArtifact)
                 .setRemoteRepositories(remoteRepositories)
@@ -248,12 +271,12 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
         ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
 
-        resolutionResult.getArtifacts().remove(providerArtifact);
-        List<Artifact> artifacts = new ArrayList<>();
-        artifacts.add(providerArtifact);
-        resolutionResult.getArtifacts().removeIf(transitive -> matchesAnyScope(transitive, excludedScopes));
-        artifacts.addAll(resolutionResult.getArtifacts());
+        resolutionResult.getArtifacts()
+                .remove(providerArtifact);
 
-        return artifacts;
+        resolutionResult.getArtifacts()
+                .removeIf(transitive -> matchesAnyScope(transitive, excludedScopes));
+
+        return resolutionResult.getArtifacts();
     }
 }

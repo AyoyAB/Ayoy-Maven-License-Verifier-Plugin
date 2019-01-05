@@ -2,6 +2,7 @@ package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -10,6 +11,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
+import org.apache.maven.repository.RepositorySystem;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,12 +26,13 @@ import java.util.List;
 import java.util.Set;
 
 import static java.io.File.separator;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
+import static org.powermock.reflect.Whitebox.invokeMethod;
+import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseVerifierMojoTest {
@@ -52,6 +55,12 @@ public class LicenseVerifierMojoTest {
     @Mock
     private ProjectBuildingResult projectBuildingResult;
 
+    @Mock
+    private RepositorySystem repositorySystem;
+
+    @Mock
+    private ArtifactResolutionResult resolutionResult;
+
     @InjectMocks
     private LicenseVerifierMojo licenseVerifierMojo;
 
@@ -63,8 +72,6 @@ public class LicenseVerifierMojoTest {
     public void before() throws Exception {
         assertNotNull("Failed to mock projectBuildingResult", projectBuildingResult);
 
-        this.artifacts.clear();
-
         when(this.session.getProjectBuildingRequest()).thenReturn(this.projectBuildingRequest);
         when(this.project.getDependencyArtifacts()).thenReturn(artifacts);
         when(projectBuilder.build(any(Artifact.class), any(ProjectBuildingRequest.class)))
@@ -72,6 +79,9 @@ public class LicenseVerifierMojoTest {
         when(this.projectBuildingResult.getProject()).thenReturn(this.project);
 
         when(this.project.getLicenses()).thenReturn(licenses);
+
+        when(repositorySystem.resolve(any())).thenReturn(resolutionResult);
+        when(resolutionResult.getArtifacts()).thenCallRealMethod();
 
         licenseVerifierMojo.setLog(log);
     }
@@ -273,13 +283,57 @@ public class LicenseVerifierMojoTest {
         licenseVerifierMojo.execute();
     }
 
-    Artifact artifact = new DefaultArtifact(
+    @Test
+    public void shouldResolveOnlyTransitiveDependencies() throws Exception {
+        resolutionResult.getArtifacts().add(artifact);
+        resolutionResult.getArtifacts().add(transitiveArtifact1);
+        resolutionResult.getArtifacts().add(transitiveArtifact2);
+
+        Set<Artifact> trans = invokeMethod(licenseVerifierMojo, "resolveTransitiveArtifact", artifact);
+
+        assertThat(trans.size(), is(2));
+        assertThat(trans, hasItem(transitiveArtifact1));
+        assertThat(trans, hasItem(transitiveArtifact2));
+    }
+
+    @Test
+    public void shouldResolveOnlyCompiletimeTransitiveDependencies() throws Exception {
+        resolutionResult.getArtifacts().add(artifact);
+        resolutionResult.getArtifacts().add(transitiveArtifact1);
+        resolutionResult.getArtifacts().add(transitiveArtifact2);
+
+        setInternalState(licenseVerifierMojo, "excludedScopes", new String[]{"runtime"});
+        Set<Artifact> trans = invokeMethod(licenseVerifierMojo, "resolveTransitiveArtifact", artifact);
+
+        assertThat(trans.size(), is(1));
+        assertThat(trans, hasItem(transitiveArtifact1));
+    }
+
+    private Artifact artifact = new DefaultArtifact(
             "groupId",
             "artifactId",
             "1.0.0",
             "compile",
             "type",
             "classifier",
+            null);
+
+    private Artifact transitiveArtifact1 = new DefaultArtifact(
+            "groupId.transitive1",
+            "artifactId-transitive1",
+            "1.0.0",
+            "compile",
+            "jar",
+            "",
+            null);
+
+    private Artifact transitiveArtifact2 = new DefaultArtifact(
+            "groupId.transitive2",
+            "artifactId-transitive2",
+            "1.0.0",
+            "runtime",
+            "jar",
+            "",
             null);
 
     private String getFilePath(String filename) {
