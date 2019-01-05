@@ -31,7 +31,7 @@ import java.util.Set;
 import static java.lang.System.lineSeparator;
 
 abstract class LicenseAbstractMojo extends AbstractMojo {
-    @Component
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     @Component
