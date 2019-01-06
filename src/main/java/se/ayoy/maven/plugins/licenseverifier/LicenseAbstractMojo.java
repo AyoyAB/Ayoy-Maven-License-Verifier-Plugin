@@ -57,7 +57,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         this.session = session;
     }
 
-    List<AyoyArtifact> parseArtifacts() {
+    List<AyoyArtifact> parseArtifacts() throws MojoExecutionException {
         ArrayList<AyoyArtifact> toReturn = new ArrayList<AyoyArtifact>();
 
         ProjectBuildingRequest projectBuildingRequest = session.getProjectBuildingRequest();
@@ -109,6 +109,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 toReturn.add(licenseInfo);
             } catch (ProjectBuildingException e) {
                 getLog().error(e.getMessage());
+                throw new MojoExecutionException("Could not build the project", e);
             }
         }
 
