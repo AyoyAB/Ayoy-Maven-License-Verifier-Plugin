@@ -44,3 +44,6 @@ To use in maven pom file:
     </configuration>
 </plugin>
 ```
+
+# Contributors
+- [John Allberg](https://github.com/smuda)
