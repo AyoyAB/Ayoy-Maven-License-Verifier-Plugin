@@ -1,6 +1,9 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.AbstractMojo;
@@ -12,6 +15,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.repository.RepositorySystem;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
@@ -24,12 +28,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.System.lineSeparator;
+
 abstract class LicenseAbstractMojo extends AbstractMojo {
-    @Component
-    private MavenProject project = null;
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
+    private MavenProject project;
 
     @Component
-    private ProjectBuilder projectBuilder = null;
+    private ProjectBuilder projectBuilder;
+
+    /**
+     * @since 1.0.4
+     */
+    @Component
+    private RepositorySystem repositorySystem;
+
+    /**
+     * ArtifactRepository of the localRepository directory.
+     * @since 1.0.4
+     */
+    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
+    private ArtifactRepository localRepository;
+
+    /**
+     * The remote plugin repositories declared in the POM.
+     * @since 1.0.4
+     */
+    @Parameter(defaultValue = "${project.pluginArtifactRepositories}")
+    private List<ArtifactRepository> remoteRepositories;
 
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
@@ -47,7 +73,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
      */
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
-
+  
     LicenseAbstractMojo(
             MavenProject project,
             ProjectBuilder projectBuilder,
@@ -69,14 +95,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
         final Set<Artifact> artifacts = project.getDependencyArtifacts();
         for (final Artifact artifact : artifacts) {
-            boolean isExcludedScope = false;
-            if (this.excludedScopes != null) {
-                for (String excludedScope : this.excludedScopes) {
-                    if (excludedScope.equals(artifact.getScope())) {
-                        isExcludedScope = true;
-                    }
-                }
-            }
+            boolean isExcludedScope = matchesAnyScope(artifact, excludedScopes);
 
             if (isExcludedScope) {
                 getLog().info("Artifact is excluded from scope \""
@@ -88,32 +107,67 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
-            AyoyArtifact licenseInfo = new AyoyArtifact(artifact);
+            toReturn.add(toAyoyArtifact(artifact, buildingRequest));
 
-            getLog().debug("Getting license for " + artifact.toString());
-            try {
-                buildingRequest.setProject(null);
+            Set<Artifact> transitiveArtifacts = resolveTransitiveArtifact(artifact);
 
-                MavenProject mavenProject = projectBuilder.build(artifact, buildingRequest).getProject();
-                if (mavenProject == null) {
-                    throw new NullPointerException("MavenProject retrieved from ProjectBuilder.build is null");
-                }
-
-                List<License> licenses = mavenProject.getLicenses();
-                if (licenses == null) {
-                    throw new NullPointerException("Licenses is null, from mavenProject from " + artifact);
-                }
-
-                licenseInfo.addLicenses(licenses);
-
-                toReturn.add(licenseInfo);
-            } catch (ProjectBuildingException e) {
-                getLog().error(e.getMessage());
-                throw new MojoExecutionException("Could not build the project", e);
+            StringBuilder transitiveArtifactsList = new StringBuilder();
+            for (Artifact transitiveArtifact : transitiveArtifacts) {
+                toReturn.add(toAyoyArtifact(transitiveArtifact, buildingRequest));
+                transitiveArtifactsList.append(lineSeparator())
+                        .append(transitiveArtifact.toString());
+            }
+            if (getLog().isDebugEnabled() && !transitiveArtifacts.isEmpty()) {
+                getLog().debug("Verifying "
+                        + transitiveArtifacts.size()
+                        + " transitive artifacts for "
+                        + artifact.getGroupId()
+                        + ":"
+                        + artifact.getArtifactId()
+                        + ":"
+                        + transitiveArtifactsList
+                );
             }
         }
 
         return toReturn;
+    }
+
+    private AyoyArtifact toAyoyArtifact(Artifact artifact, ProjectBuildingRequest buildingRequest) 
+        throws MojoExecutionException {
+        AyoyArtifact licenseInfo = new AyoyArtifact(artifact);
+
+        getLog().debug("Getting license for " + artifact.toString());
+        try {
+            buildingRequest.setProject(null);
+
+            MavenProject mavenProject = projectBuilder.build(artifact, buildingRequest).getProject();
+            if (mavenProject == null) {
+                throw new NullPointerException("MavenProject retrieved from ProjectBuilder.build is null");
+            }
+
+            List<License> licenses = mavenProject.getLicenses();
+            if (licenses == null) {
+                throw new NullPointerException("Licenses is null, from mavenProject from " + artifact);
+            }
+
+            licenseInfo.addLicenses(licenses);
+        } catch (ProjectBuildingException e) {
+            getLog().error(e.getMessage());
+            throw new MojoExecutionException("Could not build the project", e);
+        }
+        return licenseInfo;
+    }
+
+    private static boolean matchesAnyScope(Artifact artifact, String... scopes) {
+        if (scopes != null) {
+            for (String scope : scopes) {
+                if (scope.equals(artifact.getScope())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void setVerbose(String verbose) {
@@ -219,5 +273,23 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         this.getLog().warn(fileDescription + " - Could not find file " + filePath);
 
         return filePath;
+    }
+
+    private Set<Artifact> resolveTransitiveArtifact(Artifact providerArtifact) {
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+                .setArtifact(providerArtifact)
+                .setRemoteRepositories(remoteRepositories)
+                .setLocalRepository(localRepository)
+                .setResolveTransitively(true);
+
+        ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
+
+        resolutionResult.getArtifacts()
+                .remove(providerArtifact);
+
+        resolutionResult.getArtifacts()
+                .removeIf(transitive -> matchesAnyScope(transitive, excludedScopes));
+
+        return resolutionResult.getArtifacts();
     }
 }

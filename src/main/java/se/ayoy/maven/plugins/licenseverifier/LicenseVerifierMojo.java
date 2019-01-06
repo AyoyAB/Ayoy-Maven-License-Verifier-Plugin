@@ -1,12 +1,9 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfo;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
@@ -14,7 +11,6 @@ import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingL
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
-import javax.inject.Inject;
 import java.util.List;
 
 /**
@@ -49,17 +45,6 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
     @Parameter(property = "verify.requireAllValid", defaultValue = "true")
     private boolean requireAllValid = true;
-
-    /**
-     * Initialize the instance.
-     * @param project        The project which the plugin is part of.
-     * @param projectBuilder The project builder to retrieve more information.
-     * @param session        The maven session.
-     */
-    @Inject
-    public LicenseVerifierMojo(MavenProject project, ProjectBuilder projectBuilder, MavenSession session) {
-        super(project, projectBuilder, session);
-    }
 
     public void setLicenseFile(String licenseFile) {
         this.licenseFile = licenseFile;
