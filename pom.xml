@@ -46,6 +46,13 @@
             <organizationUrl>https://www.ayoy.se</organizationUrl>
         </developer>
     </developers>
+    <contributors>
+        <contributor>
+            <name>Tibor Digaňa</name>
+            <email>tibordigana@apache.org</email>
+            <url>https://github.com/Tibor17/</url>
+        </contributor>
+    </contributors>
 
     <scm>
         <connection>https://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git</connection>
