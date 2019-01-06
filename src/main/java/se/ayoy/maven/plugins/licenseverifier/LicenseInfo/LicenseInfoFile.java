@@ -15,11 +15,21 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException; // catching unsupported features
 
+/**
+ * Represents the file in which licenses are categorized.
+ */
 public class LicenseInfoFile {
 
     private ArrayList<LicenseInfo> licenseInfos = new ArrayList<LicenseInfo>();
     private Log log;
 
+    /**
+     * Initialize the instance from a file.
+     * @param filePathString          The path to the file.
+     * @param log                     The log instance to be able to log.
+     * @throws FileNotFoundException  thrown when the file could not be found.
+     * @throws MojoExecutionException thrown when something goes wrong during initialization.
+     */
     public LicenseInfoFile(String filePathString, Log log)
             throws FileNotFoundException, MojoExecutionException {
         this.log = log;
@@ -27,6 +37,10 @@ public class LicenseInfoFile {
         if (filePathString == null) {
             throw new IllegalArgumentException("The path cannot be null");
         }
+
+        this.log.info(
+                "Path to file with licenses is "
+                        + filePathString);
 
         File file = new File(filePathString);
         if (!file.exists()) {
@@ -66,6 +80,12 @@ public class LicenseInfoFile {
         log.debug("Found licenses: " + this.licenseInfos.size());
     }
 
+    /**
+     * Search for a licence using name or url.
+     * @param name name to search for.
+     * @param url  url to search for.
+     * @return the found license or null.
+     */
     public LicenseInfo getLicenseInfo(String name, String url) {
         for (LicenseInfo info : this.licenseInfos) {
             if (info.hasLicenceInfo(name, url)) {
@@ -76,6 +96,10 @@ public class LicenseInfoFile {
         return null;
     }
 
+    /**
+     * Add a license to the "database".
+     * @param licenseInfo the license to add.
+     */
     public void addLicenseInfo(LicenseInfo licenseInfo) {
         this.licenseInfos.add(licenseInfo);
     }
@@ -94,7 +118,7 @@ public class LicenseInfoFile {
         }
 
         NodeList licensesList = approvedList.item(0).getChildNodes();
-        for (int i = 0; i < licensesList.getLength(); i++){
+        for (int i = 0; i < licensesList.getLength(); i++) {
             Node node = licensesList.item(i);
             if (!node.getNodeName().equals("license")) {
 

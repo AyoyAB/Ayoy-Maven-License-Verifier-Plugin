@@ -6,17 +6,28 @@ import org.apache.maven.model.License;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a found artifact, including license information.
+ */
 public class AyoyArtifact {
 
     private final Artifact artifact;
 
     private final ArrayList<License> licenses;
 
+    /**
+     * Initialize the instance.
+     * @param artifact the maven artefact found.
+     */
     public AyoyArtifact(Artifact artifact) {
         this.artifact = artifact;
         this.licenses = new ArrayList<License>();
     }
 
+    /**
+     * Add licenses to the artifact.
+     * @param licenses the licenses to add.
+     */
     public void addLicenses(List<License> licenses) {
         if (licenses == null) {
             return;
@@ -37,7 +48,7 @@ public class AyoyArtifact {
     public String toString() {
         StringBuilder toReturn = new StringBuilder();
 
-        toReturn.append("artifact " );
+        toReturn.append("artifact ");
         toReturn.append(this.artifact);
 
         if (this.licenses.size() > 0) {
@@ -50,7 +61,7 @@ public class AyoyArtifact {
                 }
 
                 firstLic = false;
-                toReturn.append(license);
+                toReturn.append(license.getName());
             }
         }
 

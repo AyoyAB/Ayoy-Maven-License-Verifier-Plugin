@@ -1,26 +1,23 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfo;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
+import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
-import javax.inject.Inject;
 import java.util.List;
 
 /**
  * Validate the licenses against a list of known good.
  *
  */
-@Mojo( name = "verify")
+@Mojo(name = "verify")
 public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
     /**
@@ -29,39 +26,73 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
      * &lt;param&gt;provided&lt;/param&gt; &lt;/excludedScopes&gt; &lt;/configuration&gt;
      */
     @Parameter(property = "verify.licenseFile", defaultValue = "src/licenses/licenses.xml")
-    String licenseFile;
+    private String licenseFile;
+
+    @Parameter(property = "verify.excludedMissingLicensesFile", defaultValue = "")
+    private String excludedMissingLicensesFile;
 
     @Parameter(property = "verify.failOnForbidden", defaultValue = "true")
-    String failOnForbidden = "true";
-    private boolean failOnForbiddenBool;
+    private boolean failOnForbidden = true;
 
     @Parameter(property = "verify.failOnMissing", defaultValue = "true")
-    String failOnMissing = "true";
-    private boolean failOnMissingBool;
+    private boolean failOnMissing = true;
 
     @Parameter(property = "verify.failOnWarning", defaultValue = "true")
-    String failOnWarning = "true";
-    private boolean failOnWarningBool;
+    private boolean failOnWarning = true;
 
     @Parameter(property = "verify.failOnUnknown", defaultValue = "true")
-    String failOnUnknown = "true";
-    private boolean failOnUnknownBool;
+    private boolean failOnUnknown = true;
 
     @Parameter(property = "verify.requireAllValid", defaultValue = "true")
-    String requireAllValid = "true";
-    private boolean requireAllValidBool;
+    private boolean requireAllValid = true;
 
-    @Inject
-    public LicenseVerifierMojo(MavenProject project, ProjectBuilder projectBuilder, MavenSession session) {
-        super(project, projectBuilder, session);
+    public void setLicenseFile(String licenseFile) {
+        this.licenseFile = licenseFile;
     }
 
+    public void setExcludedMissingLicensesFile(String excludedMissingLicensesFile) {
+        this.excludedMissingLicensesFile = excludedMissingLicensesFile;
+    }
+
+    public void setFailOnForbidden(String failOnForbidden) {
+        this.failOnForbidden = Boolean.parseBoolean(failOnForbidden);
+    }
+
+    public void setFailOnMissing(String failOnMissing) {
+        this.failOnMissing = Boolean.parseBoolean(failOnMissing);
+    }
+
+    public void setFailOnWarning(String failOnWarning) {
+        this.failOnWarning = Boolean.parseBoolean(failOnWarning);
+    }
+
+    public void setFailOnUnknown(String failOnUnknown) {
+        this.failOnUnknown = Boolean.parseBoolean(failOnUnknown);
+    }
+
+    public void setRequireAllValid(String requireAllValid) {
+        this.requireAllValid = Boolean.parseBoolean(requireAllValid);
+    }
+
+    /**
+     * Execute the plugin.
+     * @throws MojoExecutionException   if anything goes south,
+     *                                  the thrown exception is always MojoExecutionException.
+     */
     public void execute() throws MojoExecutionException {
         try {
             checkInjects();
-            parseParameters();
 
-            LicenseInfoFile file = this.getLicenseInfoFile(this.licenseFile);
+            LicenseInfoFile licenseInfoFile = this.getLicenseInfoFile(
+                    getPathForRelativeFile(
+                            this.licenseFile,
+                            "LicenseInfo"));
+
+            ExcludedMissingLicenseFile excludedMissingLicenseFile =
+                this.getExcludedMissingLicensesFile(
+                        getPathForRelativeFile(
+                                this.excludedMissingLicensesFile,
+                                "ExcludedMissingLicenses"));
 
             getLog().info("Parsing dependencies.");
             List<AyoyArtifact> artifacts = parseArtifacts();
@@ -86,7 +117,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 for (License license : artifact.getLicenses()) {
                     artifactHasNoLicense = false;
                     logInfoIfVerbose("    Checking license: " + LogHelper.logLicense(license));
-                    LicenseInfo info = file.getLicenseInfo(license.getName(), license.getUrl());
+                    LicenseInfo info = licenseInfoFile.getLicenseInfo(license.getName(), license.getUrl());
 
                     if (info == null) {
                         // License does not exist in file.
@@ -94,7 +125,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                                 license.getName(),
                                 license.getUrl(),
                                 LicenseInfoStatusEnum.UNKNOWN);
-                        file.addLicenseInfo(info);
+                        licenseInfoFile.addLicenseInfo(info);
                     }
 
                     logInfoIfVerbose("    Got licenseInfo with status : " + info.getStatus());
@@ -126,15 +157,21 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 }
 
                 if (artifactHasNoLicense) {
-                    getLog().warn("MISSING   " + artifact);
-                    hasNoLicense = true;
+                    if (!excludedMissingLicenseFile.isExcluded(artifact)) {
+                        getLog().warn("MISSING   " + artifact);
+                        hasNoLicense = true;
+                    } else {
+                        getLog().info(
+                            "Artifact is missing license but is explicitly excluded: "
+                                + artifact);
+                    }
                 }
 
                 if (artifactHasValidLicense) {
                     hasValid = true;
                 }
 
-                if (requireAllValidBool || (!requireAllValidBool && !hasValid)) {
+                if (requireAllValid || !requireAllValid && !hasValid) {
                     if (artifactHasForbiddenLicense) {
                         hasForbidden = true;
                     }
@@ -149,22 +186,22 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 }
             }
 
-            if (failOnMissingBool && hasNoLicense) {
+            if (failOnMissing && hasNoLicense) {
                 throw new MojoExecutionException(
                         "One or more artifacts is missing license information.");
             }
 
-            if (failOnWarningBool && hasWarning) {
+            if (failOnWarning && hasWarning) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is classified as warning.");
             }
 
-            if (failOnUnknownBool && hasUnknown) {
+            if (failOnUnknown && hasUnknown) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is unclassified.");
             }
 
-            if (failOnForbiddenBool && hasForbidden) {
+            if (failOnForbidden && hasForbidden) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is classified as forbidden.");
             }
@@ -173,7 +210,6 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         } catch (MojoExecutionException exc) {
             throw exc;
         } catch (Exception exc) {
-            exc.printStackTrace();
             throw new MojoExecutionException(exc.getMessage(), exc);
         }
     }
@@ -185,18 +221,5 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         if (this.licenseFile == null) {
             throw new NullPointerException("licenseFile cannot be null. Check your settings.");
         }
-    }
-
-
-    private void parseParameters() {
-        this.failOnForbiddenBool = Boolean.parseBoolean(this.failOnForbidden);
-
-        this.failOnMissingBool = Boolean.parseBoolean(this.failOnMissing);
-
-        this.failOnWarningBool = Boolean.parseBoolean(this.failOnWarning);
-
-        this.failOnUnknownBool = Boolean.parseBoolean(this.failOnUnknown);
-
-        this.requireAllValidBool = Boolean.parseBoolean(this.requireAllValid);
     }
 }

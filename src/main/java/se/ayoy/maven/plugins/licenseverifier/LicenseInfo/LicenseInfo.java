@@ -7,6 +7,9 @@ import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a license with information.
+ */
 public class LicenseInfo {
     private String name;
 
@@ -16,7 +19,12 @@ public class LicenseInfo {
 
     private LicenseInfoStatusEnum licenseInfoStatus;
 
-    public LicenseInfo(Node node, LicenseInfoStatusEnum status ) {
+    /**
+     * Initialize the instance from XML.
+     * @param node   The XML node to read from.
+     * @param status The status of the license.
+     */
+    public LicenseInfo(Node node, LicenseInfoStatusEnum status) {
         this.licenseInfoStatus = status;
 
         if (node == null) {
@@ -25,7 +33,7 @@ public class LicenseInfo {
 
         NodeList children = node.getChildNodes();
 
-        for(int i=0;i< children.getLength(); i++) {
+        for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
 
             if (child.getNodeName().equals("name")) {
@@ -38,6 +46,12 @@ public class LicenseInfo {
         }
     }
 
+    /**
+     * Initialize the instance from raw information.
+     * @param name       The name of the license.
+     * @param url        The URL of the license.
+     * @param infoStatus The status of the licence.
+     */
     public LicenseInfo(String name, String url, LicenseInfoStatusEnum infoStatus) {
         this.name = name;
         this.configuredNames.add(name);
@@ -54,7 +68,7 @@ public class LicenseInfo {
 
         toReturn.append(", names: [");
         boolean isFirst = true;
-        for (String name : this.configuredNames){
+        for (String name : this.configuredNames) {
             if (!isFirst) {
                 toReturn.append(", ");
             }
@@ -65,7 +79,7 @@ public class LicenseInfo {
 
         toReturn.append("], urls: [");
         isFirst = true;
-        for (String url : this.configuredUrls){
+        for (String url : this.configuredUrls) {
             if (!isFirst) {
                 toReturn.append(", ");
             }

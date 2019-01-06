@@ -2,46 +2,43 @@ package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.ArtifactHandler;
-import org.apache.maven.artifact.metadata.ArtifactMetadata;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.OverConstrainedVersionException;
-import org.apache.maven.artifact.versioning.VersionRange;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
+import org.apache.maven.repository.RepositorySystem;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static java.io.File.separator;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
+import static org.powermock.reflect.Whitebox.invokeMethod;
+import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseVerifierMojoTest {
 
     @Mock
-    private LicenseInfoFile licenseInfoFile;
+    private Log log;
 
     @Mock
     private MavenProject project;
@@ -58,20 +55,22 @@ public class LicenseVerifierMojoTest {
     @Mock
     private ProjectBuildingResult projectBuildingResult;
 
+    @Mock
+    private RepositorySystem repositorySystem;
+
+    @Mock
+    private ArtifactResolutionResult resolutionResult;
+
     @InjectMocks
     private LicenseVerifierMojo licenseVerifierMojo;
 
-    Set<Artifact> artifacts = new HashSet<Artifact>();
+    private Set<Artifact> artifacts = new HashSet<>();
 
-    List<License> licenses = new ArrayList<License>();
+    private List<License> licenses = new ArrayList<>();
 
     @Before
     public void before() throws Exception {
-        if (projectBuildingResult == null) {
-            throw new NullPointerException("Failed to mock projectBuildingResult");
-        }
-
-        this.artifacts.clear();
+        assertNotNull("Failed to mock projectBuildingResult", projectBuildingResult);
 
         when(this.session.getProjectBuildingRequest()).thenReturn(this.projectBuildingRequest);
         when(this.project.getDependencyArtifacts()).thenReturn(artifacts);
@@ -81,21 +80,27 @@ public class LicenseVerifierMojoTest {
 
         when(this.project.getLicenses()).thenReturn(licenses);
 
-        this.licenseVerifierMojo = new LicenseVerifierMojo(this.project, this.projectBuilder, this.session);
+        when(repositorySystem.resolve(any())).thenReturn(resolutionResult);
+        when(resolutionResult.getArtifacts()).thenCallRealMethod();
+
+        licenseVerifierMojo.setLog(log);
     }
 
     @Test
     public void missingFile() throws Exception {
 
-        licenseVerifierMojo.licenseFile = "thisFileDoesntExist.xml";
+        licenseVerifierMojo.setLicenseFile("thisFileDoesntExist.xml");
 
         // Act
         try {
             licenseVerifierMojo.execute();
             fail();
         } catch (org.apache.maven.plugin.MojoExecutionException exc) {
+            String message = exc.getMessage();
             // Verify
-            assertEquals("File thisFileDoesntExist.xml could not be found.", exc.getMessage());
+            assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
+            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin"
+                    + separator + "thisFileDoesntExist.xml\") could not be found."));
         }
     }
 
@@ -108,7 +113,7 @@ public class LicenseVerifierMojoTest {
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
 
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         licenseVerifierMojo.execute();
@@ -120,7 +125,7 @@ public class LicenseVerifierMojoTest {
     public void missingLicense() throws Exception {
         this.artifacts.add(this.artifact);
 
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -134,6 +139,39 @@ public class LicenseVerifierMojoTest {
     }
 
     @Test
+    public void missingExcludedLicenseFile() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+        licenseVerifierMojo.setExcludedMissingLicensesFile("thisFileDoesntExist.xml");
+
+        // Act
+        try {
+            licenseVerifierMojo.execute();
+
+            // Verify
+            fail(); // Not implemented. Should throw exception.
+        } catch (org.apache.maven.plugin.MojoExecutionException exc) {
+            String message = exc.getMessage();
+            // Verify
+            assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
+            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin"
+                    + separator + "thisFileDoesntExist.xml\") could not be found."));
+        }
+    }
+
+    @Test
+    public void missingLicenseButExcluded() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+        licenseVerifierMojo.setExcludedMissingLicensesFile(getFilePath("ExcludedMissingLicense.xml"));
+
+        // Act
+        licenseVerifierMojo.execute();
+    }
+
+    @Test
     public void unknownLicense() throws Exception {
         this.artifacts.add(this.artifact);
 
@@ -141,7 +179,7 @@ public class LicenseVerifierMojoTest {
         license.setName("This is some strange license");
         license.setUrl("http://www.ayoy.se/licenses/SUPERSTRANGE.txt");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -162,7 +200,7 @@ public class LicenseVerifierMojoTest {
         license.setName("The Forbidden License");
         license.setUrl("http://www.ayoy.org/licenses/FORBIDDEN");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -183,7 +221,7 @@ public class LicenseVerifierMojoTest {
         license.setName("The Warning License");
         license.setUrl("http://www.ayoy.org/licenses/WARNING");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -210,7 +248,7 @@ public class LicenseVerifierMojoTest {
         license.setName("The Apache Software License, Version 2.0");
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
         // Act
         try {
@@ -237,21 +275,65 @@ public class LicenseVerifierMojoTest {
         license.setName("The Apache Software License, Version 2.0");
         license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
         licenses.add(license);
-        licenseVerifierMojo.licenseFile = getFilePath("LicenseVerifierMojoTest-OneValid.xml");
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
 
-        licenseVerifierMojo.requireAllValid = "false";
+        licenseVerifierMojo.setRequireAllValid("false");
 
         // Act
         licenseVerifierMojo.execute();
     }
 
-    Artifact artifact = new DefaultArtifact(
+    @Test
+    public void shouldResolveOnlyTransitiveDependencies() throws Exception {
+        resolutionResult.getArtifacts().add(artifact);
+        resolutionResult.getArtifacts().add(transitiveArtifact1);
+        resolutionResult.getArtifacts().add(transitiveArtifact2);
+
+        Set<Artifact> trans = invokeMethod(licenseVerifierMojo, "resolveTransitiveArtifact", artifact);
+
+        assertThat(trans.size(), is(2));
+        assertThat(trans, hasItem(transitiveArtifact1));
+        assertThat(trans, hasItem(transitiveArtifact2));
+    }
+
+    @Test
+    public void shouldResolveOnlyCompiletimeTransitiveDependencies() throws Exception {
+        resolutionResult.getArtifacts().add(artifact);
+        resolutionResult.getArtifacts().add(transitiveArtifact1);
+        resolutionResult.getArtifacts().add(transitiveArtifact2);
+
+        setInternalState(licenseVerifierMojo, "excludedScopes", new String[]{"runtime"});
+        Set<Artifact> trans = invokeMethod(licenseVerifierMojo, "resolveTransitiveArtifact", artifact);
+
+        assertThat(trans.size(), is(1));
+        assertThat(trans, hasItem(transitiveArtifact1));
+    }
+
+    private Artifact artifact = new DefaultArtifact(
             "groupId",
             "artifactId",
             "1.0.0",
             "compile",
             "type",
             "classifier",
+            null);
+
+    private Artifact transitiveArtifact1 = new DefaultArtifact(
+            "groupId.transitive1",
+            "artifactId-transitive1",
+            "1.0.0",
+            "compile",
+            "jar",
+            "",
+            null);
+
+    private Artifact transitiveArtifact2 = new DefaultArtifact(
+            "groupId.transitive2",
+            "artifactId-transitive2",
+            "1.0.0",
+            "runtime",
+            "jar",
+            "",
             null);
 
     private String getFilePath(String filename) {
