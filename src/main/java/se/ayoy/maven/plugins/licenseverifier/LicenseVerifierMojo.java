@@ -24,6 +24,11 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
      * A filename to the file with info on approved licenses.
      * Example: &lt;configuration&gt; &lt;excludedScopes&gt; &lt;param&gt;test&lt;/param&gt;
      * &lt;param&gt;provided&lt;/param&gt; &lt;/excludedScopes&gt; &lt;/configuration&gt;
+     * <br>
+     * The path can be parameterized absolute or relative. Since version 1.0.4 the plugin
+     * can be specified in the parent of multi-module project and the children projects find
+     * the license XML file in the nearest parent location with given relative path.
+     * The child relative path takes the precedence.
      */
     @Parameter(property = "verify.licenseFile", defaultValue = "src/licenses/licenses.xml")
     private String licenseFile;

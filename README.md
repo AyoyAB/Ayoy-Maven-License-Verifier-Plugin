@@ -4,7 +4,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/se.ayoy.maven-plugins/ayoy-license-verifier-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/se.ayoy.maven-plugins/ayoy-license-verifier-maven-plugin)
 
 When developing commercial software with OSS dependencies its
-very important to verify that you only use dependencies with
+very important to verify that you only use dependencies and transitive dependencies with
 acceptable licenses.
 
 This plugin will verify the licenses of the current 
@@ -45,5 +45,11 @@ To use in maven pom file:
 </plugin>
 ```
 
+The parameter path in `licenseFile` and `excludedMissingLicensesFile`can be relative to the child POM
+or the nearest parent POM.
+This is very useful in Maven multi-module projects where `src/licenses/licenses.xml` is defined only in parent location.
+
+
 # Contributors
 - [John Allberg](https://github.com/smuda)
+- [Tibor Digana](https://github.com/Tibor17)
