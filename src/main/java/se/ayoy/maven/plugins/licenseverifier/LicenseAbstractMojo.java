@@ -112,7 +112,9 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 getLog().debug("Verifying "
                         + transitiveArtifacts.size()
                         + " transitive artifacts for "
-                        + artifact.toString()
+                        + artifact.getGroupId()
+                        + ":"
+                        + artifact.getArtifactId()
                         + ":"
                         + transitiveArtifactsList
                 );
