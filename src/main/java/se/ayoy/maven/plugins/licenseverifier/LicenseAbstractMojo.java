@@ -74,15 +74,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
   
-    LicenseAbstractMojo(
-            MavenProject project,
-            ProjectBuilder projectBuilder,
-            MavenSession session) {
-        this.project = project;
-        this.projectBuilder = projectBuilder;
-        this.session = session;
-    }
-
     List<AyoyArtifact> parseArtifacts() throws MojoExecutionException {
         ArrayList<AyoyArtifact> toReturn = new ArrayList<AyoyArtifact>();
 
