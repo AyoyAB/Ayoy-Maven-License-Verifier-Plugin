@@ -2,6 +2,15 @@
 <licenses>
     <valid>
         <license>
+            <name>The 2-Clause BSD License</name>
+            <names>
+                <name>New BSD License</name>
+            </names>
+            <urls>
+                <url>http://www.opensource.org/licenses/bsd-license.php</url>
+            </urls>
+        </license>
+        <license>
             <name>Apache Software License, Version 2.0</name>
             <names>
                 <name>The Apache Software License, Version 2.0</name>
