@@ -284,6 +284,52 @@ public class LicenseVerifierMojoTest {
     }
 
     @Test
+    public void bothUnknownAndValidLicense1() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        License license = new License();
+        license.setName("The unknown License");
+        license.setUrl("http://www.ayoy.org/licenses/UNKNOWN");
+        licenses.add(license);
+        license = new License();
+        license.setName("The Apache Software License, Version 2.0");
+        license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
+        licenses.add(license);
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+
+        licenseVerifierMojo.setRequireAllValid("false");
+
+        // Act
+        licenseVerifierMojo.execute();
+    }
+
+    @Test
+    public void bothUnknownAndValidLicense2() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        License license = new License();
+        license.setName("The unknown License");
+        license.setUrl("http://www.ayoy.org/licenses/UNKNOWN");
+        licenses.add(license);
+        license = new License();
+        license.setName("The Apache Software License, Version 2.0");
+        license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
+        licenses.add(license);
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+
+        licenseVerifierMojo.setRequireAllValid("true");
+
+        // Act
+        try {
+            licenseVerifierMojo.execute();
+
+            fail();
+        } catch(MojoExecutionException exc) {
+            assertEquals("One or more artifacts has licenses which is unclassified.", exc.getMessage());
+        }
+    }
+
+    @Test
     public void shouldResolveOnlyTransitiveDependencies() throws Exception {
         resolutionResult.getArtifacts().add(artifact);
         resolutionResult.getArtifacts().add(transitiveArtifact1);

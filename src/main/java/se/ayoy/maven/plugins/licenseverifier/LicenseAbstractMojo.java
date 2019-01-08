@@ -98,13 +98,14 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
-            toReturn.add(toAyoyArtifact(artifact, buildingRequest));
+            AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, null);
+            toReturn.add(ayoyArtifact);
 
             Set<Artifact> transitiveArtifacts = resolveTransitiveArtifact(artifact);
 
             StringBuilder transitiveArtifactsList = new StringBuilder();
             for (Artifact transitiveArtifact : transitiveArtifacts) {
-                toReturn.add(toAyoyArtifact(transitiveArtifact, buildingRequest));
+                toReturn.add(toAyoyArtifact(transitiveArtifact, buildingRequest, ayoyArtifact));
                 transitiveArtifactsList.append(lineSeparator())
                         .append(transitiveArtifact.toString());
             }
@@ -124,9 +125,12 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         return toReturn;
     }
 
-    private AyoyArtifact toAyoyArtifact(Artifact artifact, ProjectBuildingRequest buildingRequest) 
+    private AyoyArtifact toAyoyArtifact(
+        Artifact artifact,
+        ProjectBuildingRequest buildingRequest,
+        AyoyArtifact parentArtifact)
         throws MojoExecutionException {
-        AyoyArtifact licenseInfo = new AyoyArtifact(artifact);
+        AyoyArtifact licenseInfo = new AyoyArtifact(artifact, parentArtifact);
 
         getLog().debug("Getting license for " + artifact.toString());
         try {
