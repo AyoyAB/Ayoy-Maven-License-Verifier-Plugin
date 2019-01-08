@@ -77,7 +77,9 @@ and update README.md with the new version.
 mvn clean deploy -Prelease
 ```
 
-8. Restore version to SNAPSHOT:
+8. Tag with "v1.0.4" on the correct commit.
+
+9. Restore version to SNAPSHOT:
 ```bash
-mvn versions:set -DnewVersion=1.0.4-SNAPSHOT
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.5-SNAPSHOT
 ```

@@ -7,7 +7,7 @@
 
     <groupId>se.ayoy.maven-plugins</groupId>
     <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
