@@ -150,7 +150,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         } catch (ProjectBuildingException e) {
             getLog().error("Could not build the project for " + artifact.toString());
             getLog().error(e.getMessage());
-            throw new MojoExecutionException("Could not build the project", e);
         }
         return licenseInfo;
     }
