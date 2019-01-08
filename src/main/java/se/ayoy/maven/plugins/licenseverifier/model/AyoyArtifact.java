@@ -61,7 +61,9 @@ public class AyoyArtifact {
                 }
 
                 firstLic = false;
+                toReturn.append("\"");
                 toReturn.append(license.getName());
+                toReturn.append("\"");
             }
         }
 

@@ -30,11 +30,11 @@ try {
 
     String log = new String(Files.readAllBytes(file.toPath()));
 
-    if (!log.contains("UNKNOWN   artifact junit:junit:jar:4.12:test with licenses: Eclipse Public License 1.0")) {
+    if (!log.contains("UNKNOWN   artifact junit:junit:jar:4.12:test with licenses: \"Eclipse Public License 1.0\"")) {
         return false;
     }
 
-    if (!log.contains("UNKNOWN   artifact org.hamcrest:hamcrest-core:jar:1.3:test with licenses: New BSD License")) {
+    if (!log.contains("UNKNOWN   artifact org.hamcrest:hamcrest-core:jar:1.3:test with licenses: \"New BSD License\"")) {
         return false;
     }
 } catch (IOException e) {
