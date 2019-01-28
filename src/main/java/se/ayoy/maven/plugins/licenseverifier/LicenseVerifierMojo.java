@@ -9,6 +9,7 @@ import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
+import se.ayoy.maven.plugins.licenseverifier.model.OverallStatus;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
 import java.util.List;
@@ -117,113 +118,28 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                     + filteredArtifacts.size()
                     + " artifacts after filtering. Now validating their licenses with the list.");
 
-            boolean hasUnknown = false;
-            boolean hasWarning = false;
-            boolean hasForbidden = false;
-            boolean hasNoLicense = false;
-
             // Loop through all artifacts and determine status
-            for (AyoyArtifact artifactToCheck : filteredArtifacts) {
-                logInfoIfVerbose("Artifact: " + artifactToCheck);
-                for (License license : artifactToCheck.getLicenses()) {
-                    logInfoIfVerbose("    Fetching license info: " + LogHelper.logLicense(license));
-                    LicenseInfo info = licenseInfoFile.getLicenseInfo(license.getName(), license.getUrl());
-
-                    if (info == null) {
-                        // License does not exist in file.
-                        info = new LicenseInfo(
-                            license.getName(),
-                            license.getUrl(),
-                            LicenseInfoStatusEnum.UNKNOWN);
-                        licenseInfoFile.addLicenseInfo(info);
-                    }
-
-                    logInfoIfVerbose("    Got licenseInfo with status : " + info.getStatus());
-                    artifactToCheck.addLicenseInfo(info);
-                }
-            }
+            filteredArtifacts = determineArtifactStatus(filteredArtifacts, licenseInfoFile);
 
             // Loop through all artifacts and get the overall status
-            for (AyoyArtifact artifact : filteredArtifacts) {
-                if (artifact.isLicenseValid(requireAllValid)) {
-                    logInfoIfVerbose("VALID      " + artifact);
-                    for (LicenseInfo info : artifact.getLicenseInfos()) {
-                        logInfoIfVerbose("           license:  " + info);
-                    }
+            OverallStatus status = calculateOverallStatus(filteredArtifacts);
 
-                    continue;
-                }
-
-                boolean artifactHasNoLicense = true;
-                boolean artifactHasForbiddenLicense = false;
-                boolean artifactHasWarningLicense = false;
-                boolean artifactHasUnknownLicense = false;
-
-                for (LicenseInfo info : artifact.getLicenseInfos()) {
-                    artifactHasNoLicense = false;
-
-                    switch (info.getStatus()) {
-                        case VALID:
-                            logInfoIfVerbose("VALID      " + artifact);
-                            logInfoIfVerbose("           license:  " + info);
-                            break;
-                        case WARNING:
-                            artifactHasWarningLicense = true;
-                            getLog().warn("WARNING   " + artifact);
-                            getLog().warn("          license:  " + info);
-                            getLog().warn("          dependency chain: " + artifact.getChainString());
-                            break;
-                        case FORBIDDEN:
-                            artifactHasForbiddenLicense = true;
-                            getLog().warn("FORBIDDEN " + artifact);
-                            getLog().warn("          license:  " + info);
-                            getLog().warn("          dependency chain: " + artifact.getChainString());
-                            break;
-                        case UNKNOWN:
-                            artifactHasUnknownLicense = true;
-                            getLog().warn("UNKNOWN   " + artifact);
-                            getLog().warn("          license:  " + info);
-                            getLog().warn("          dependency chain: " + artifact.getChainString());
-                            break;
-                        default:
-                            throw new MojoExecutionException("Unknown license status for " + artifact);
-                    }
-                }
-
-                if (artifactHasNoLicense) {
-                    getLog().warn("MISSING   " + artifact);
-                    hasNoLicense = true;
-                }
-
-                if (artifactHasForbiddenLicense) {
-                    hasForbidden = true;
-                }
-
-                if (artifactHasWarningLicense) {
-                    hasWarning = true;
-                }
-
-                if (artifactHasUnknownLicense) {
-                    hasUnknown = true;
-                }
-            }
-
-            if (failOnMissing && hasNoLicense) {
+            if (failOnMissing && status.getHasNoLicense()) {
                 throw new MojoExecutionException(
                         "One or more artifacts is missing license information.");
             }
 
-            if (failOnWarning && hasWarning) {
+            if (failOnWarning && status.getHasWarningLicense()) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is classified as warning.");
             }
 
-            if (failOnUnknown && hasUnknown) {
+            if (failOnUnknown && status.getHasUnknownLicense()) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is unclassified.");
             }
 
-            if (failOnForbidden && hasForbidden) {
+            if (failOnForbidden && status.getHasForbiddenLicense()) {
                 throw new MojoExecutionException(
                         "One or more artifacts has licenses which is classified as forbidden.");
             }
@@ -234,6 +150,110 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         } catch (Exception exc) {
             throw new MojoExecutionException(exc.getMessage(), exc);
         }
+    }
+
+    /**
+     * Determine the license status for the individual artifacts from the license information file.
+     * @param artifacts       the individual artifacts.
+     * @param licenseInfoFile the license information file.
+     * @return the updated list of artifacts.
+     */
+    private List<AyoyArtifact> determineArtifactStatus(
+            List<AyoyArtifact> artifacts,
+            LicenseInfoFile licenseInfoFile) {
+
+        for (AyoyArtifact artifactToCheck : artifacts) {
+            logInfoIfVerbose("Artifact: " + artifactToCheck);
+            for (License license : artifactToCheck.getLicenses()) {
+                logInfoIfVerbose("    Fetching license info: " + LogHelper.logLicense(license));
+                LicenseInfo info = licenseInfoFile.getLicenseInfo(license.getName(), license.getUrl());
+
+                if (info == null) {
+                    // License does not exist in file.
+                    info = new LicenseInfo(
+                            license.getName(),
+                            license.getUrl(),
+                            LicenseInfoStatusEnum.UNKNOWN);
+                    licenseInfoFile.addLicenseInfo(info);
+                }
+
+                logInfoIfVerbose("    Got licenseInfo with status : " + info.getStatus());
+                artifactToCheck.addLicenseInfo(info);
+            }
+        }
+
+        return artifacts;
+    }
+
+    private OverallStatus calculateOverallStatus(List<AyoyArtifact> filteredArtifacts) throws MojoExecutionException {
+
+        OverallStatus status = new OverallStatus();
+
+        for (AyoyArtifact artifact : filteredArtifacts) {
+            if (artifact.isLicenseValid(requireAllValid)) {
+                logInfoIfVerbose("VALID      " + artifact);
+                for (LicenseInfo info : artifact.getLicenseInfos()) {
+                    logInfoIfVerbose("           license:  " + info);
+                }
+
+                continue;
+            }
+
+            boolean artifactHasNoLicense = true;
+            boolean artifactHasForbiddenLicense = false;
+            boolean artifactHasWarningLicense = false;
+            boolean artifactHasUnknownLicense = false;
+
+            for (LicenseInfo info : artifact.getLicenseInfos()) {
+                artifactHasNoLicense = false;
+
+                switch (info.getStatus()) {
+                    case VALID:
+                        logInfoIfVerbose("VALID      " + artifact);
+                        logInfoIfVerbose("           license:  " + info);
+                        break;
+                    case WARNING:
+                        artifactHasWarningLicense = true;
+                        getLog().warn("WARNING   " + artifact);
+                        getLog().warn("          license:  " + info);
+                        getLog().warn("          dependency chain: " + artifact.getChainString());
+                        break;
+                    case FORBIDDEN:
+                        artifactHasForbiddenLicense = true;
+                        getLog().warn("FORBIDDEN " + artifact);
+                        getLog().warn("          license:  " + info);
+                        getLog().warn("          dependency chain: " + artifact.getChainString());
+                        break;
+                    case UNKNOWN:
+                        artifactHasUnknownLicense = true;
+                        getLog().warn("UNKNOWN   " + artifact);
+                        getLog().warn("          license:  " + info);
+                        getLog().warn("          dependency chain: " + artifact.getChainString());
+                        break;
+                    default:
+                        throw new MojoExecutionException("Unknown license status for " + artifact);
+                }
+            }
+
+            if (artifactHasNoLicense) {
+                getLog().warn("MISSING   " + artifact);
+                status.setHasNoLicense(true);
+            }
+
+            if (artifactHasForbiddenLicense) {
+                status.setHasForbiddenLicense(true);
+            }
+
+            if (artifactHasWarningLicense) {
+                status.setHasWarningLicense(true);
+            }
+
+            if (artifactHasUnknownLicense) {
+                status.setHasUnknownLicense(true);
+            }
+        }
+
+        return status;
     }
 
     @Override
