@@ -49,6 +49,13 @@ The parameter path in `licenseFile` and `excludedMissingLicensesFile`can be rela
 or the nearest parent POM.
 This is very useful in Maven multi-module projects where `src/licenses/licenses.xml` is defined only in parent location.
 
+# Running tests
+
+Run a single integration test like this:
+```
+mvn verify -Dinvoker.test=artifact-with-license-and-ignored
+```
+
 
 # Contributors
 - [John Allberg](https://github.com/smuda)
