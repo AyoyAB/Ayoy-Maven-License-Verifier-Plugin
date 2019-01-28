@@ -12,6 +12,7 @@ import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Validate the licenses against a list of known good.
@@ -100,11 +101,21 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                                 "ExcludedMissingLicenses"));
 
             getLog().info("Parsing dependencies.");
-            List<AyoyArtifact> artifacts = parseArtifacts();
+            List<AyoyArtifact> unfilteredArtifacts = parseArtifacts();
+
+            getLog().info("Found " + unfilteredArtifacts.size() + " artifacts.");
+
+            // Filter away excluded artifacts.
+            List<AyoyArtifact> filteredArtifacts =
+                    unfilteredArtifacts
+                            .stream()
+                            .filter(artifact -> !excludedMissingLicenseFile.isExcluded(artifact))
+                            .collect(Collectors.toList());
+
 
             getLog().info("Found "
-                    + artifacts.size()
-                    + " artifacts. Now validating their licenses with the list.");
+                    + filteredArtifacts.size()
+                    + " artifacts after filtering. Now validating their licenses with the list.");
 
             boolean hasUnknown = false;
             boolean hasWarning = false;
@@ -112,7 +123,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
             boolean hasNoLicense = false;
 
             // Loop through all artifacts and determine status
-            for (AyoyArtifact artifactToCheck : artifacts) {
+            for (AyoyArtifact artifactToCheck : filteredArtifacts) {
                 logInfoIfVerbose("Artifact: " + artifactToCheck);
                 for (License license : artifactToCheck.getLicenses()) {
                     logInfoIfVerbose("    Fetching license info: " + LogHelper.logLicense(license));
@@ -133,7 +144,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
             }
 
             // Loop through all artifacts and get the overall status
-            for (AyoyArtifact artifact : artifacts) {
+            for (AyoyArtifact artifact : filteredArtifacts) {
                 if (artifact.isLicenseValid(requireAllValid)) {
                     logInfoIfVerbose("VALID      " + artifact);
                     for (LicenseInfo info : artifact.getLicenseInfos()) {
@@ -180,14 +191,8 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 }
 
                 if (artifactHasNoLicense) {
-                    if (!excludedMissingLicenseFile.isExcluded(artifact)) {
-                        getLog().warn("MISSING   " + artifact);
-                        hasNoLicense = true;
-                    } else {
-                        logInfoIfVerbose(
-                            "Artifact is missing license but is explicitly excluded: "
-                                + artifact);
-                    }
+                    getLog().warn("MISSING   " + artifact);
+                    hasNoLicense = true;
                 }
 
                 if (artifactHasForbiddenLicense) {
