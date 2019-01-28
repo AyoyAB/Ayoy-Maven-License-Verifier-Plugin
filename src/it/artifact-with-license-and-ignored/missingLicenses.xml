@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<missing>
+    <dependency>
+        <groupId>org.hibernate.javax.persistence</groupId>
+        <artifactId>hibernate-jpa-2.0-api</artifactId>
+        <version>1.0.1.Final</version>
+        <license>
+            <name>Eclipse Public License 1.0</name>
+            <url>https://opensource.org/licenses/EPL-1.0</url>
+        </license>
+    </dependency>
+</missing>
