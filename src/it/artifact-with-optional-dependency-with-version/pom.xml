@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>se.ayoy.maven-plugins.its</groupId>
-    <artifactId>unverified-license</artifactId>
+    <artifactId>optional-dependency-with-version</artifactId>
     <version>1.0</version>
 
     <dependencies>
