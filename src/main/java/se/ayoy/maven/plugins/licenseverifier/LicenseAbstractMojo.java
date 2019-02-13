@@ -98,6 +98,14 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
+            if (artifact.isOptional()) {
+                getLog().info("Artifact is optional and will be excluded: "
+                        + artifact.getGroupId()
+                        + ":"
+                        + artifact.getArtifactId());
+                continue;
+            }
+
             AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, null);
             toReturn.add(ayoyArtifact);
 
