@@ -30,7 +30,11 @@ try {
 
     String log = new String(Files.readAllBytes(file.toPath()));
 
-    if (!log.contains("Verifying 1 transitive artifacts for junit:junit")) {
+    if (!log.contains("[INFO] Checking artifact junit:junit:4.12")) {
+        return false;
+    }
+
+    if (!log.contains("[INFO] Found 1 transitive artifacts with parent junit:junit:4.12")) {
         return false;
     }
 
