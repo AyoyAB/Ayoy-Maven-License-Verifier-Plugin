@@ -10,10 +10,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.2.5</version>
-            <optional>true</optional>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>4.2.0</version>
         </dependency>
     </dependencies>
 
@@ -39,6 +38,9 @@
                     <failOnWarning>true</failOnWarning>
                     <licenseFile>${pom.basedir}/licenses.xml</licenseFile>
                     <excludedMissingLicensesFile>${pom.basedir}/missingLicenses.xml</excludedMissingLicensesFile>
+                    <excludedScopes>
+                        <excludedScope>test</excludedScope>
+                    </excludedScopes>
                 </configuration>
             </plugin>
         </plugins>

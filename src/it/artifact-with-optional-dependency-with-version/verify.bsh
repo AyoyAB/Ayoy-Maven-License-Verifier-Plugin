@@ -11,13 +11,13 @@ try {
 
     String log = new String(Files.readAllBytes(file.toPath()));
 
-    if (!log.contains("All licenses verified.")) {
-        System.err.println("Error: All licenses is not verified.");
+    if (!log.contains("[INFO] Excluding optional artifact: org.slf4j:slf4j-api:1.7.16")) {
+        System.err.println("Error: Should find log of excluding optional artifacts.");
         return false;
     }
 
-    if (!log.contains("Artifact is optional and will be excluded: org.postgresql:postgresql")) {
-        System.err.println("Error: Failed with at least one artifact.");
+    if (!log.contains("All licenses verified.")) {
+        System.err.println("Error: All licenses is not verified.");
         return false;
     }
 } catch (IOException e) {
