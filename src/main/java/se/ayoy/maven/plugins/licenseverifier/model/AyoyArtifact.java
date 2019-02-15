@@ -149,4 +149,24 @@ public class AyoyArtifact {
     public List<LicenseInfo> getLicenseInfos() {
         return new ArrayList<LicenseInfo>(this.licenseInfos);
     }
+
+    /**
+     * Create a string representation as if we're the parent.
+     * @return a string representation.
+     */
+    public String getParentString() {
+        String toReturn = "";
+        if (this.parent != null) {
+            toReturn += toString(this.parent.getArtifact())
+                    + " -> ";
+        }
+
+        toReturn += toString(this.artifact);
+
+        return toReturn;
+    }
+
+    private String toString(Artifact artifact) {
+        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
+    }
 }

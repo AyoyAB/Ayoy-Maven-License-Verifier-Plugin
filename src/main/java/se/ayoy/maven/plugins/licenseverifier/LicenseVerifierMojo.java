@@ -102,7 +102,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                                 "ExcludedMissingLicenses"));
 
             getLog().info("Parsing dependencies.");
-            List<AyoyArtifact> unfilteredArtifacts = parseArtifacts();
+            List<AyoyArtifact> unfilteredArtifacts = parseArtifacts(excludedMissingLicenseFile);
 
             getLog().info("Found " + unfilteredArtifacts.size() + " artifacts.");
 

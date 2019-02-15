@@ -1,5 +1,6 @@
 package se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.w3c.dom.Document;
@@ -85,11 +86,20 @@ public class ExcludedMissingLicenseFile {
      * @return true if excluded.
      */
     public boolean isExcluded(AyoyArtifact artifact) {
+        return this.isExcluded(artifact.getArtifact());
+    }
+
+    /**
+     * Check if a certain artifact with missing license information is excluded.
+     * @param artifact the artifact.
+     * @return true if excluded.
+     */
+    public boolean isExcluded(Artifact artifact) {
         for (ExcludedMissingLicense missingInfo : this.missingInfos) {
 
-            if (missingInfo.getGroupId().equals(artifact.getArtifact().getGroupId())
-                && missingInfo.getArtifactId().equals(artifact.getArtifact().getArtifactId())
-                && missingInfo.getVersion().equals(artifact.getArtifact().getVersion())) {
+            if (missingInfo.getGroupId().equals(artifact.getGroupId())
+                    && missingInfo.getArtifactId().equals(artifact.getArtifactId())
+                    && missingInfo.getVersion().equals(artifact.getVersion())) {
                 return true;
             }
         }
