@@ -101,9 +101,10 @@ public class LicenseVerifierMojoTest {
                     toReturn.getArtifacts().add(transitiveArtifact2);
                     toReturn.getArtifacts().add(transitiveArtifact3);
                 } else if (queryArtifact.equals(transitiveArtifact1)
-                        || queryArtifact.equals(transitiveArtifact2)
-                        || queryArtifact.equals(transitiveArtifact3)) {
+                        || queryArtifact.equals(transitiveArtifact2)) {
                     // Return empty
+                } else if (queryArtifact.equals(transitiveArtifact3)) {
+                    toReturn.getArtifacts().add(transitiveArtifact4);
                 } else {
                     // Return empty
                 }
@@ -435,8 +436,17 @@ public class LicenseVerifierMojoTest {
             null);
 
     private Artifact transitiveArtifact3 = new DefaultArtifact(
-            "groupId.transitive2",
-            "artifactId-transitive2",
+            "groupId.transitive3",
+            "artifactId-transitive3",
+            "1.0.0",
+            "runtime",
+            "jar",
+            "",
+            null);
+
+    private Artifact transitiveArtifact4 = new DefaultArtifact(
+            "groupId.transitive4",
+            "artifactId-transitive4",
             "1.0.0",
             "runtime",
             "jar",
