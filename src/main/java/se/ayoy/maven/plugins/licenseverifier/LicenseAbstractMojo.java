@@ -106,14 +106,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
-            if (artifact.isOptional()) {
-                getLog().info("Artifact is optional: "
-                        + artifact.getGroupId()
-                        + ":"
-                        + artifact.getArtifactId());
-                continue;
-            }
-
             if (excludedArtifacts != null && excludedArtifacts.isExcluded(artifact)) {
                 getLog().info("Artifact is excluded: "
                         + artifact.getGroupId()
@@ -136,6 +128,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
             // Check the transitive artifacts
             ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+                    .setResolutionFilter(a -> !a.isOptional())
                     .setArtifact(artifact)
                     .setRemoteRepositories(remoteRepositories)
                     .setLocalRepository(localRepository)
