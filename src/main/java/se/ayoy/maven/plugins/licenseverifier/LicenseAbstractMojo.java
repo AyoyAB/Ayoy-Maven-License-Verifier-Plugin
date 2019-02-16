@@ -96,23 +96,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
         ArrayList<AyoyArtifact> toReturn = new ArrayList<>();
         for (Artifact artifact: artifacts) {
-            if (matchesAnyScope(artifact, excludedScopes)) {
-                getLog().info("Artifact is excluded from scope \""
-                        + artifact.getScope()
-                        + "\": "
-                        + artifact.getGroupId()
-                        + ":"
-                        + artifact.getArtifactId());
-                continue;
-            }
-
-            if (excludedArtifacts != null && excludedArtifacts.isExcluded(artifact)) {
-                getLog().info("Artifact is excluded: "
-                        + artifact.getGroupId()
-                        + ":"
-                        + artifact.getArtifactId()
-                        + ":"
-                        + artifact.getVersion());
+            if (!shouldArtifactBeIncluded(artifact, excludedArtifacts)) {
                 continue;
             }
 
@@ -128,7 +112,13 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
             // Check the transitive artifacts
             ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                    .setResolutionFilter(a -> !a.isOptional())
+                    .setResolutionFilter(a -> {
+                        if (a.equals(artifact)) {
+                            return false;
+                        }
+
+                        return shouldArtifactBeIncluded(a, excludedArtifacts);
+                    })
                     .setArtifact(artifact)
                     .setRemoteRepositories(remoteRepositories)
                     .setLocalRepository(localRepository)
@@ -136,26 +126,11 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
             ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
 
-            Set<Artifact> transitiveArtifacts = resolutionResult.getArtifacts()
+            Set<Artifact> transitiveArtifacts = resolutionResult
+                    .getArtifacts()
                     .stream()
-                    .filter(artifact1 -> !artifact1.equals(artifact))
-                    .filter(artifact1 -> {
-                        if (artifact1.isOptional()) {
-                            logInfoIfVerbose("Excluding optional artifact: " + toString(artifact1));
-                            return false;
-                        }
-                        return true;
-                    })
-                    .filter(artifact1 -> {
-                        if (matchesAnyScope(artifact, excludedScopes)) {
-                            logInfoIfVerbose("Excluding artifact with scope \""
-                                    + artifact.getScope()
-                                    + "\": " + toString(artifact1));
-                            return false;
-                        }
-
-                        return true;
-                    })
+                    .filter(a -> !a.equals(artifact))
+                    .filter(a -> shouldArtifactBeIncluded(a, excludedArtifacts))
                     .collect(Collectors.toSet());
 
             logInfoIfVerbose("Found "
@@ -172,6 +147,34 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
 
         return toReturn;
+    }
+
+    /**
+     * Check if an artifact should be included in lists.
+     * @param a                 the artifact.
+     * @param excludedArtifacts the list of excluded artifacts.
+     * @return true if included.
+     */
+    protected boolean shouldArtifactBeIncluded(Artifact a, ExcludedMissingLicenseFile excludedArtifacts) {
+        if (a.isOptional()) {
+            logInfoIfVerbose("Excluding optional artifact: " + toString(a));
+            return false;
+        }
+
+        if (matchesAnyScope(a, excludedScopes)) {
+            logInfoIfVerbose("Excluding artifact with scope \""
+                    + a.getScope()
+                    + "\": " + toString(a));
+            return false;
+        }
+
+        if (excludedArtifacts != null && excludedArtifacts.isExcluded(a)) {
+            logInfoIfVerbose("Excluding artifact, found in configuration: "
+                    + toString(a));
+            return false;
+        }
+
+        return true;
     }
 
     private AyoyArtifact toAyoyArtifact(

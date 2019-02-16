@@ -30,7 +30,7 @@ try {
 
     String log = new String(Files.readAllBytes(file.toPath()));
 
-    if (!log.contains("Artifact is excluded from scope \"test\": junit:junit")) {
+    if (!log.contains("Excluding artifact with scope \"test\": junit:junit")) {
         return false;
     }
 

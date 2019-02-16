@@ -4,6 +4,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -95,7 +97,8 @@ public class LicenseVerifierMojoTest {
                 Artifact queryArtifact = arg1.getArtifact();
 
                 ArtifactResolutionResult toReturn = new ArtifactResolutionResult();
-                toReturn.getArtifacts().add(queryArtifact);
+
+                ArrayList<Artifact> artifacts = new ArrayList<>();
                 if (queryArtifact.equals(artifact)) {
                     toReturn.getArtifacts().add(transitiveArtifact1);
                     toReturn.getArtifacts().add(transitiveArtifact2);
@@ -108,6 +111,14 @@ public class LicenseVerifierMojoTest {
                 } else {
                     // Return empty
                 }
+
+                ArtifactFilter resolutionFilter = arg1.getResolutionFilter();
+
+                toReturn.getArtifacts().addAll(
+                        artifacts
+                                .stream()
+                                .filter(resolutionFilter::include)
+                                .collect(Collectors.toSet()));
 
                 return toReturn;
             }

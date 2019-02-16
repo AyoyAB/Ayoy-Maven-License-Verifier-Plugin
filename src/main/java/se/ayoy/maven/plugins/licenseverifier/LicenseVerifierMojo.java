@@ -110,7 +110,9 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
             List<AyoyArtifact> filteredArtifacts =
                     unfilteredArtifacts
                             .stream()
-                            .filter(artifact -> !excludedMissingLicenseFile.isExcluded(artifact))
+                            .filter(artifact -> shouldArtifactBeIncluded(
+                                    artifact.getArtifact(),
+                                    excludedMissingLicenseFile))
                             .collect(Collectors.toList());
 
 
