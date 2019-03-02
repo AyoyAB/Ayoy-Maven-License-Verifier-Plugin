@@ -113,10 +113,12 @@
 
     <build>
         <plugins>
+            <!-- these plugins are in-directly used and is specified in the super-pom -->
             <plugin>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.3</version>
+                <version>3.6.0</version>
             </plugin>
+            <!-- these plugins are directly used -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -155,7 +157,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>pre-its</id>
@@ -210,7 +212,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>4.0.2</version>
+                <version>5.0.0-M1</version>
                 <executions>
                     <execution>
                         <goals>
@@ -250,7 +252,7 @@
             <plugin>
                 <groupId>se.ayoy.maven-plugins</groupId>
                 <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
-                <version>1.0.4</version>
+                <version>1.0.5</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>
