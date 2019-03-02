@@ -2,7 +2,9 @@ package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -17,13 +19,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static java.io.File.separator;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -80,7 +89,40 @@ public class LicenseVerifierMojoTest {
 
         when(this.project.getLicenses()).thenReturn(licenses);
 
-        when(repositorySystem.resolve(any())).thenReturn(resolutionResult);
+        transitiveArtifact3.setOptional(true);
+        when(repositorySystem.resolve(Mockito.any(ArtifactResolutionRequest.class))).thenAnswer(new Answer<ArtifactResolutionResult>() {
+            @Override
+            public ArtifactResolutionResult answer(InvocationOnMock invocationOnMock) throws Throwable {
+                ArtifactResolutionRequest arg1 = (ArtifactResolutionRequest)invocationOnMock.getArguments()[0];
+                Artifact queryArtifact = arg1.getArtifact();
+
+                ArtifactResolutionResult toReturn = new ArtifactResolutionResult();
+
+                ArrayList<Artifact> artifacts = new ArrayList<>();
+                if (queryArtifact.equals(artifact)) {
+                    toReturn.getArtifacts().add(transitiveArtifact1);
+                    toReturn.getArtifacts().add(transitiveArtifact2);
+                    toReturn.getArtifacts().add(transitiveArtifact3);
+                } else if (queryArtifact.equals(transitiveArtifact1)
+                        || queryArtifact.equals(transitiveArtifact2)) {
+                    // Return empty
+                } else if (queryArtifact.equals(transitiveArtifact3)) {
+                    toReturn.getArtifacts().add(transitiveArtifact4);
+                } else {
+                    // Return empty
+                }
+
+                ArtifactFilter resolutionFilter = arg1.getResolutionFilter();
+
+                toReturn.getArtifacts().addAll(
+                        artifacts
+                                .stream()
+                                .filter(resolutionFilter::include)
+                                .collect(Collectors.toSet()));
+
+                return toReturn;
+            }
+        });
         when(resolutionResult.getArtifacts()).thenCallRealMethod();
 
         licenseVerifierMojo.setLog(log);
@@ -284,29 +326,97 @@ public class LicenseVerifierMojoTest {
     }
 
     @Test
+    public void bothUnknownAndValidLicense1() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        License license = new License();
+        license.setName("The unknown License");
+        license.setUrl("http://www.ayoy.org/licenses/UNKNOWN");
+        licenses.add(license);
+        license = new License();
+        license.setName("The Apache Software License, Version 2.0");
+        license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
+        licenses.add(license);
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+
+        licenseVerifierMojo.setRequireAllValid("false");
+
+        // Act
+        licenseVerifierMojo.execute();
+    }
+
+    @Test
+    public void bothUnknownAndValidLicense2() throws Exception {
+        this.artifacts.add(this.artifact);
+
+        License license = new License();
+        license.setName("The unknown License");
+        license.setUrl("http://www.ayoy.org/licenses/UNKNOWN");
+        licenses.add(license);
+        license = new License();
+        license.setName("The Apache Software License, Version 2.0");
+        license.setUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
+        licenses.add(license);
+        licenseVerifierMojo.setLicenseFile(getFilePath("LicenseVerifierMojoTest-OneValid.xml"));
+
+        licenseVerifierMojo.setRequireAllValid("true");
+
+        // Act
+        try {
+            licenseVerifierMojo.execute();
+
+            fail();
+        } catch(MojoExecutionException exc) {
+            assertEquals("One or more artifacts has licenses which is unclassified.", exc.getMessage());
+        }
+    }
+
+    @Test
     public void shouldResolveOnlyTransitiveDependencies() throws Exception {
-        resolutionResult.getArtifacts().add(artifact);
-        resolutionResult.getArtifacts().add(transitiveArtifact1);
-        resolutionResult.getArtifacts().add(transitiveArtifact2);
+        Set<Artifact> artifactsSet = new HashSet<Artifact>();
+        artifactsSet.add(artifact);
 
-        Set<Artifact> trans = invokeMethod(licenseVerifierMojo, "resolveTransitiveArtifact", artifact);
+        List<AyoyArtifact> trans = invokeMethod(
+                licenseVerifierMojo,
+                "resolveArtifacts",
+                artifactsSet,
+                projectBuildingRequest,
+                null,
+                null);
 
-        assertThat(trans.size(), is(2));
-        assertThat(trans, hasItem(transitiveArtifact1));
-        assertThat(trans, hasItem(transitiveArtifact2));
+        assertThat(trans.size(), is(3));
+        List<Artifact> resultArtifactList = trans
+                .stream()
+                .map(ayoyArtifact -> ayoyArtifact.getArtifact())
+                .collect(Collectors.toList());
+
+        assertThat(resultArtifactList, hasItem(artifact));
+        assertThat(resultArtifactList, hasItem(transitiveArtifact1));
+        assertThat(resultArtifactList, hasItem(transitiveArtifact2));
     }
 
     @Test
     public void shouldResolveOnlyCompiletimeTransitiveDependencies() throws Exception {
-        resolutionResult.getArtifacts().add(artifact);
-        resolutionResult.getArtifacts().add(transitiveArtifact1);
-        resolutionResult.getArtifacts().add(transitiveArtifact2);
+        Set<Artifact> artifactsSet = new HashSet<Artifact>();
+        artifactsSet.add(artifact);
 
         setInternalState(licenseVerifierMojo, "excludedScopes", new String[]{"runtime"});
-        Set<Artifact> trans = invokeMethod(licenseVerifierMojo, "resolveTransitiveArtifact", artifact);
+        List<AyoyArtifact> trans = invokeMethod(
+                licenseVerifierMojo,
+                "resolveArtifacts",
+                artifactsSet,
+                projectBuildingRequest,
+                null,
+                null);
 
-        assertThat(trans.size(), is(1));
-        assertThat(trans, hasItem(transitiveArtifact1));
+        assertThat(trans.size(), is(2));
+        List<Artifact> resultArtifactList = trans
+                .stream()
+                .map(ayoyArtifact -> ayoyArtifact.getArtifact())
+                .collect(Collectors.toList());
+
+        assertThat(resultArtifactList, hasItem(artifact));
+        assertThat(resultArtifactList, hasItem(transitiveArtifact1));
     }
 
     private Artifact artifact = new DefaultArtifact(
@@ -330,6 +440,24 @@ public class LicenseVerifierMojoTest {
     private Artifact transitiveArtifact2 = new DefaultArtifact(
             "groupId.transitive2",
             "artifactId-transitive2",
+            "1.0.0",
+            "runtime",
+            "jar",
+            "",
+            null);
+
+    private Artifact transitiveArtifact3 = new DefaultArtifact(
+            "groupId.transitive3",
+            "artifactId-transitive3",
+            "1.0.0",
+            "runtime",
+            "jar",
+            "",
+            null);
+
+    private Artifact transitiveArtifact4 = new DefaultArtifact(
+            "groupId.transitive4",
+            "artifactId-transitive4",
             "1.0.0",
             "runtime",
             "jar",

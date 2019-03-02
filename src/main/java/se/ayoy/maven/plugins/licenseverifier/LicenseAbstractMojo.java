@@ -27,8 +27,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import static java.lang.System.lineSeparator;
+import java.util.stream.Collectors;
 
 abstract class LicenseAbstractMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -74,8 +73,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
   
-    List<AyoyArtifact> parseArtifacts() throws MojoExecutionException {
-        ArrayList<AyoyArtifact> toReturn = new ArrayList<AyoyArtifact>();
+    List<AyoyArtifact> parseArtifacts(ExcludedMissingLicenseFile excludedArtifacts) {
 
         ProjectBuildingRequest projectBuildingRequest = session.getProjectBuildingRequest();
         if (projectBuildingRequest == null) {
@@ -85,48 +83,105 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(projectBuildingRequest);
 
         final Set<Artifact> artifacts = project.getDependencyArtifacts();
-        for (final Artifact artifact : artifacts) {
-            boolean isExcludedScope = matchesAnyScope(artifact, excludedScopes);
+        ArrayList<AyoyArtifact> toReturn = resolveArtifacts(artifacts, buildingRequest, excludedArtifacts, null);
 
-            if (isExcludedScope) {
-                getLog().info("Artifact is excluded from scope \""
-                        + artifact.getScope()
-                        + "\": "
-                        + artifact.getGroupId()
-                        + ":"
-                        + artifact.getArtifactId());
+        return toReturn;
+    }
+
+    private ArrayList<AyoyArtifact> resolveArtifacts(
+            Set<Artifact> artifacts,
+            ProjectBuildingRequest buildingRequest,
+            ExcludedMissingLicenseFile excludedArtifacts,
+            AyoyArtifact parent) {
+
+        ArrayList<AyoyArtifact> toReturn = new ArrayList<>();
+        for (Artifact artifact: artifacts) {
+            if (!shouldArtifactBeIncluded(artifact, excludedArtifacts)) {
                 continue;
             }
 
-            toReturn.add(toAyoyArtifact(artifact, buildingRequest));
-
-            Set<Artifact> transitiveArtifacts = resolveTransitiveArtifact(artifact);
-
-            StringBuilder transitiveArtifactsList = new StringBuilder();
-            for (Artifact transitiveArtifact : transitiveArtifacts) {
-                toReturn.add(toAyoyArtifact(transitiveArtifact, buildingRequest));
-                transitiveArtifactsList.append(lineSeparator())
-                        .append(transitiveArtifact.toString());
+            String toLog = "Checking artifact ";
+            if (parent != null) {
+                toLog += parent.getParentString() + " -> ";
             }
-            if (getLog().isDebugEnabled() && !transitiveArtifacts.isEmpty()) {
-                getLog().debug("Verifying "
-                        + transitiveArtifacts.size()
-                        + " transitive artifacts for "
-                        + artifact.getGroupId()
-                        + ":"
-                        + artifact.getArtifactId()
-                        + ":"
-                        + transitiveArtifactsList
-                );
-            }
+            toLog += toString(artifact);
+            logInfoIfVerbose(toLog);
+
+            AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, parent);
+            toReturn.add(ayoyArtifact);
+
+            // Check the transitive artifacts
+            ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+                    .setResolutionFilter(a -> {
+                        if (a.equals(artifact)) {
+                            return false;
+                        }
+
+                        return shouldArtifactBeIncluded(a, excludedArtifacts);
+                    })
+                    .setArtifact(artifact)
+                    .setRemoteRepositories(remoteRepositories)
+                    .setLocalRepository(localRepository)
+                    .setResolveTransitively(true);
+
+            ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
+
+            Set<Artifact> transitiveArtifacts = resolutionResult
+                    .getArtifacts()
+                    .stream()
+                    .filter(a -> !a.equals(artifact))
+                    .filter(a -> shouldArtifactBeIncluded(a, excludedArtifacts))
+                    .collect(Collectors.toSet());
+
+            logInfoIfVerbose("Found "
+                    + transitiveArtifacts.size()
+                    + " transitive artifacts with parent "
+                    + toString(ayoyArtifact.getArtifact()));
+
+            toReturn.addAll(
+                    resolveArtifacts(
+                            transitiveArtifacts,
+                            buildingRequest,
+                            excludedArtifacts,
+                            ayoyArtifact));
         }
 
         return toReturn;
     }
 
-    private AyoyArtifact toAyoyArtifact(Artifact artifact, ProjectBuildingRequest buildingRequest) 
-        throws MojoExecutionException {
-        AyoyArtifact licenseInfo = new AyoyArtifact(artifact);
+    /**
+     * Check if an artifact should be included in lists.
+     * @param a                 the artifact.
+     * @param excludedArtifacts the list of excluded artifacts.
+     * @return true if included.
+     */
+    protected boolean shouldArtifactBeIncluded(Artifact a, ExcludedMissingLicenseFile excludedArtifacts) {
+        if (a.isOptional()) {
+            logInfoIfVerbose("Excluding optional artifact: " + toString(a));
+            return false;
+        }
+
+        if (matchesAnyScope(a, excludedScopes)) {
+            logInfoIfVerbose("Excluding artifact with scope \""
+                    + a.getScope()
+                    + "\": " + toString(a));
+            return false;
+        }
+
+        if (excludedArtifacts != null && excludedArtifacts.isExcluded(a)) {
+            logInfoIfVerbose("Excluding artifact, found in configuration: "
+                    + toString(a));
+            return false;
+        }
+
+        return true;
+    }
+
+    private AyoyArtifact toAyoyArtifact(
+        Artifact artifact,
+        ProjectBuildingRequest buildingRequest,
+        AyoyArtifact parentArtifact) {
+        AyoyArtifact licenseInfo = new AyoyArtifact(artifact, parentArtifact);
 
         getLog().debug("Getting license for " + artifact.toString());
         try {
@@ -144,8 +199,8 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
             licenseInfo.addLicenses(licenses);
         } catch (ProjectBuildingException e) {
+            getLog().error("Could not build the project for " + artifact.toString());
             getLog().error(e.getMessage());
-            throw new MojoExecutionException("Could not build the project", e);
         }
         return licenseInfo;
     }
@@ -201,9 +256,11 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
     }
 
-    void logInfoIfVerbose(String message) {
+        void logInfoIfVerbose(String message) {
         if (this.verbose) {
             this.getLog().info(message);
+        } else {
+            this.getLog().debug(message);
         }
     }
 
@@ -266,21 +323,11 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         return filePath;
     }
 
-    private Set<Artifact> resolveTransitiveArtifact(Artifact providerArtifact) {
-        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                .setArtifact(providerArtifact)
-                .setRemoteRepositories(remoteRepositories)
-                .setLocalRepository(localRepository)
-                .setResolveTransitively(true);
-
-        ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
-
-        resolutionResult.getArtifacts()
-                .remove(providerArtifact);
-
-        resolutionResult.getArtifacts()
-                .removeIf(transitive -> matchesAnyScope(transitive, excludedScopes));
-
-        return resolutionResult.getArtifacts();
+    private String toString(Artifact artifact) {
+        return artifact.getGroupId()
+                + ":"
+                + artifact.getArtifactId()
+                + ":"
+                + artifact.getVersion();
     }
 }

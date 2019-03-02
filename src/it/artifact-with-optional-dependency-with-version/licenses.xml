@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<licenses>
+    <valid>
+        <license>
+            <name>Flyway: The Apache Software License, Version 2.0</name>
+            <names>
+                <name>Flyway: The Apache Software License, Version 2.0</name>
+            </names>
+            <urls>
+                <url>https://github.com/flyway/flyway/blob/master/LICENSE.txt</url>
+            </urls>
+        </license>
+    </valid>
+</licenses>

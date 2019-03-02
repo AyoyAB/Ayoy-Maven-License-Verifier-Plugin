@@ -65,7 +65,7 @@ gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
 
 5. Prepare a release by running the following command:
 ```bash
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.3
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.6
 ```
 
 and update README.md with the new version.
@@ -77,7 +77,9 @@ and update README.md with the new version.
 mvn clean deploy -Prelease
 ```
 
-8. Restore version to SNAPSHOT:
+8. Tag with "v1.0.6" on the correct commit.
+
+9. Restore version to SNAPSHOT:
 ```bash
-mvn versions:set -DnewVersion=1.0.4-SNAPSHOT
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.7-SNAPSHOT
 ```

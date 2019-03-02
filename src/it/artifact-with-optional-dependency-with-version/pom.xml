@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>se.ayoy.maven-plugins.its</groupId>
+    <artifactId>optional-dependency-with-version</artifactId>
+    <version>1.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>@project.groupId@</groupId>
+                <artifactId>@project.artifactId@</artifactId>
+                <version>@project.version@</version>
+                <executions>
+                    <execution>
+                        <id>license-check</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <verbose>true</verbose>
+                    <requireAllValid>true</requireAllValid>
+                    <failOnMissing>true</failOnMissing>
+                    <failOnWarning>true</failOnWarning>
+                    <licenseFile>${pom.basedir}/licenses.xml</licenseFile>
+                    <excludedMissingLicensesFile>${pom.basedir}/missingLicenses.xml</excludedMissingLicensesFile>
+                    <excludedScopes>
+                        <excludedScope>test</excludedScope>
+                    </excludedScopes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

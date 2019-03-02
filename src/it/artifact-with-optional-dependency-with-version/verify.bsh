@@ -1,0 +1,29 @@
+import java.io.*;
+import java.util.*;
+import java.nio.file.Files;
+
+try {
+    File file = new File(basedir, "build.log");
+    if (!file.exists() || file.isDirectory()) {
+        System.err.println("Could not find 'build.log': " + file);
+        return false;
+    }
+
+    String log = new String(Files.readAllBytes(file.toPath()));
+
+    if (!log.contains("[INFO] Excluding optional artifact: org.slf4j:slf4j-api:1.7.16")) {
+        System.err.println("Error: Should find log of excluding optional artifacts.");
+        return false;
+    }
+
+    if (!log.contains("All licenses verified.")) {
+        System.err.println("Error: All licenses is not verified.");
+        return false;
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+    return false;
+}
+
+System.out.println("Test validated OK.");
+return true;

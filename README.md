@@ -4,7 +4,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/se.ayoy.maven-plugins/ayoy-license-verifier-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/se.ayoy.maven-plugins/ayoy-license-verifier-maven-plugin)
 
 When developing commercial software with OSS dependencies its
-very important to verify that you only use dependencies with
+very important to verify that you only use dependencies and transitive dependencies with
 acceptable licenses.
 
 This plugin will verify the licenses of the current 
@@ -26,7 +26,7 @@ To use in maven pom file:
 <plugin>
     <groupId>se.ayoy.maven-plugins</groupId>
     <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.5</version>
     <executions>
         <execution>
             <phase>compile</phase>
@@ -36,11 +36,42 @@ To use in maven pom file:
         </execution>
     </executions>
     <configuration>
-        <licenseFile>${project.parent.basedir}/licenses/licenses.xml</licenseFile>
-        <excludedMissingLicensesFile>${project.parent.basedir}/licenses/allowedMissingLicense.xml</excludedMissingLicensesFile>
+        <licenseFile>${project.basedir}/licenses/licenses.xml</licenseFile>
+        <excludedMissingLicensesFile>${project.basedir}/licenses/allowedMissingLicense.xml</excludedMissingLicensesFile>
         <failOnForbidden>true</failOnForbidden>
         <failOnMissing>true</failOnMissing>
         <failOnUnknown>true</failOnUnknown>
     </configuration>
 </plugin>
 ```
+
+The parameter path in `licenseFile` and `excludedMissingLicensesFile`can be relative to the child POM
+or the nearest parent POM.
+This is very useful in Maven multi-module projects where `src/licenses/licenses.xml` is defined only in parent location.
+
+# Building from source
+This is a maven project. Simply clone from git
+
+```bash
+git clone https://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin.git
+```
+
+Go to the directory and run
+
+```bash
+mvn clean install
+```
+
+You have now installed the snapshot-version.
+
+# Running tests
+
+Run a single integration test like this:
+```bash
+mvn verify -Dinvoker.test=artifact-with-license-and-ignored
+```
+
+
+# Contributors
+- [John Allberg](https://github.com/smuda)
+- [Tibor Digana](https://github.com/Tibor17)
