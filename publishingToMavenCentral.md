@@ -20,7 +20,7 @@ https://www.g-loaded.eu/2010/11/01/change-expiration-date-gpg-key/
 and publish them again 
 
 ```bash
-gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
+gpg --keyserver hkp://pool.sks-keyservers.net --send-keys C6EED57A
 ```
 
 3. Check your gpg stuff in ~/.m2/settings.xml
