@@ -244,6 +244,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <suppressionFile>dependency-check-suppress.xml</suppressionFile>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

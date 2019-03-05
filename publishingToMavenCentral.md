@@ -10,7 +10,7 @@ mvn versions:display-plugin-updates
 
 2. Check the date of your private keys.
 ```bash
-gpg2 --list-secret-keys
+gpg --list-secret-keys
 ```
 
 If they are expired, change expiration by following this
@@ -20,10 +20,10 @@ https://www.g-loaded.eu/2010/11/01/change-expiration-date-gpg-key/
 and publish them again 
 
 ```bash
-gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
+gpg --keyserver hkp://pool.sks-keyservers.net --send-keys C6EED57A
 ```
 
-3. Check your gpg stuff in .m2/settings.xml
+3. Check your gpg stuff in ~/.m2/settings.xml
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -37,7 +37,7 @@ gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <gpg.executable>gpg2</gpg.executable>
+        <gpg.executable>gpg</gpg.executable>
         <gpg.passphrase>the_pass_phrase</gpg.passphrase>
       </properties>
     </profile>
@@ -77,9 +77,9 @@ and update README.md with the new version.
 mvn clean deploy -Prelease
 ```
 
-8. Tag with "v1.0.6" on the correct commit.
+8. Tag with "v1.0.7" on the correct commit.
 
 9. Restore version to SNAPSHOT:
 ```bash
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.7-SNAPSHOT
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.8-SNAPSHOT
 ```
