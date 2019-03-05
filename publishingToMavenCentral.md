@@ -23,7 +23,7 @@ and publish them again
 gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
 ```
 
-3. Check your gpg stuff in .m2/settings.xml
+3. Check your gpg stuff in ~/.m2/settings.xml
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
