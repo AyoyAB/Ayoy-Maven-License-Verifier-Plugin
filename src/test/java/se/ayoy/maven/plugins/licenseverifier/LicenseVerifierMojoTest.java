@@ -419,6 +419,30 @@ public class LicenseVerifierMojoTest {
         assertThat(resultArtifactList, hasItem(transitiveArtifact1));
     }
 
+    @Test
+    public void shouldNotResolveTransitiveDependenciesIfDisabled() throws Exception {
+        Set<Artifact> artifactsSet = new HashSet<>();
+        artifactsSet.add(artifact);
+
+        licenseVerifierMojo.setCheckTransitiveDependencies("false");
+        List<AyoyArtifact> trans = invokeMethod(
+                licenseVerifierMojo,
+                "resolveArtifacts",
+                artifactsSet,
+                projectBuildingRequest,
+                null,
+                null);
+
+        assertThat(trans.size(), is(1));
+        List<Artifact> resultArtifactList = trans
+                .stream()
+                .map(AyoyArtifact::getArtifact)
+                .collect(Collectors.toList());
+
+        assertThat(resultArtifactList, hasItem(artifact));
+
+    }
+
     private Artifact artifact = new DefaultArtifact(
             "groupId",
             "artifactId",

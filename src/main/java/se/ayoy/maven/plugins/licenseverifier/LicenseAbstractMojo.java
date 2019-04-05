@@ -110,6 +110,11 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, parent);
             toReturn.add(ayoyArtifact);
 
+
+            if (!shouldCheckTransitiveDependencies()) {
+                continue;
+            }
+
             // Check the transitive artifacts
             ArtifactResolutionRequest request = new ArtifactResolutionRequest()
                     .setResolutionFilter(a -> {
@@ -329,5 +334,9 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 + artifact.getArtifactId()
                 + ":"
                 + artifact.getVersion();
+    }
+
+    protected boolean shouldCheckTransitiveDependencies() {
+        return true;
     }
 }
