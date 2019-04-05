@@ -115,7 +115,10 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
-            List<AyoyArtifact> transitiveArtifacts = resolveTransitiveArtifacts(buildingRequest, excludedArtifacts, artifact, ayoyArtifact);
+            List<AyoyArtifact> transitiveArtifacts =
+                    resolveTransitiveArtifacts(
+                            buildingRequest, excludedArtifacts, artifact, ayoyArtifact
+                    );
             toReturn.addAll(transitiveArtifacts);
 
         }
