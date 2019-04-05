@@ -115,14 +115,20 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 continue;
             }
 
-            toReturn.addAll(resolveTransitiveArtifacts(buildingRequest, excludedArtifacts, toReturn, artifact, ayoyArtifact));
+            List<AyoyArtifact> transitiveArtifacts = resolveTransitiveArtifacts(buildingRequest, excludedArtifacts, artifact, ayoyArtifact);
+            toReturn.addAll(transitiveArtifacts);
 
         }
 
         return toReturn;
     }
 
-    private List<AyoyArtifact> resolveTransitiveArtifacts(ProjectBuildingRequest buildingRequest, ExcludedMissingLicenseFile excludedArtifacts, ArrayList<AyoyArtifact> toReturn, Artifact artifact, AyoyArtifact ayoyArtifact) {
+    private List<AyoyArtifact> resolveTransitiveArtifacts(
+            ProjectBuildingRequest buildingRequest,
+            ExcludedMissingLicenseFile excludedArtifacts,
+            Artifact artifact,
+            AyoyArtifact ayoyArtifact
+    ) {
         // Check the transitive artifacts
         ArtifactResolutionRequest request = new ArtifactResolutionRequest()
                 .setResolutionFilter(a -> {
