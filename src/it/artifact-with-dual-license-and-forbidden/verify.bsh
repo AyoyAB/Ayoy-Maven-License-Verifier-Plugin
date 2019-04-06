@@ -1,0 +1,30 @@
+import java.io.*;
+import java.util.*;
+import java.nio.file.Files;
+
+try {
+    File file = new File(basedir, "build.log");
+    if (!file.exists() || file.isDirectory()) {
+        System.err.println("Could not find 'build.log': " + file);
+        return false;
+    }
+
+    String log = new String(Files.readAllBytes(file.toPath()));
+
+    if (log.contains("All licenses verified.")) {
+        System.err.println("Error: All licenses should not verified.");
+        return false;
+    }
+
+    if (!log.contains("FORBIDDEN artifact")) {
+        System.err.println("Should find one forbidden license");
+        return false;
+    }
+
+} catch (IOException e) {
+    e.printStackTrace();
+    return false;
+}
+
+System.out.println("Test validated OK.");
+return true;

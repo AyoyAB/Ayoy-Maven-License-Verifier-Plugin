@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<licenses>
+    <valid>
+        <license>
+            <name>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</name>
+            <names>
+                <name>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</name>
+            </names>
+            <urls>
+                <url>http://www.sun.com/cddl/cddl.html</url>
+            </urls>
+        </license>
+    </valid>
+    <forbidden>
+        <license>
+            <name>GNU General Public Library</name>
+            <names>
+                <name>GNU General Public Library</name>
+            </names>
+            <urls>
+                <url>http://www.gnu.org/licenses/gpl.txt</url>
+            </urls>
+        </license>
+    </forbidden>
+</licenses>
