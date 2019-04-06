@@ -141,8 +141,7 @@ public class LicenseVerifierMojoTest {
             String message = exc.getMessage();
             // Verify
             assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
-            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin"
-                    + separator + "thisFileDoesntExist.xml\") could not be found."));
+            assertTrue(message.endsWith(separator + "thisFileDoesntExist.xml\") could not be found."));
         }
     }
 
@@ -197,8 +196,7 @@ public class LicenseVerifierMojoTest {
             String message = exc.getMessage();
             // Verify
             assertTrue(message.startsWith("File \"thisFileDoesntExist.xml\" (expanded to \""));
-            assertTrue(message.endsWith("Ayoy-Maven-License-Verifier-Plugin"
-                    + separator + "thisFileDoesntExist.xml\") could not be found."));
+            assertTrue(message.endsWith(separator + "thisFileDoesntExist.xml\") could not be found."));
         }
     }
 
