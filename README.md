@@ -71,6 +71,17 @@ Run a single integration test like this:
 mvn verify -Dinvoker.test=artifact-with-license-and-ignored
 ```
 
+# Configuration settings
+
+- licenseFile: The location of the licenses.xml file. Defaults to src/licenses/licenses.xml
+- excludedMissingLicensesFile: The location of the file listing dependencies that should not be checked for licenses. Default blank
+- excludedScopes: A list of scopes to exclude. May be used to exclude artifacts with test or provided scope from license check.
+- failOnForbidden. Default true
+- failOnMissing. Default true
+- failOnUnknown. Default true
+- failOnWarning. Default true
+- requireAllValid: If a dependency provides several licenses, do you require all of them to be among your accepted licenses, or just one? Default true (requires all)
+- verbose: Default false
 
 # Contributors
 - [John Allberg](https://github.com/smuda)
