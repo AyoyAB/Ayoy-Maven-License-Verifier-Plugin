@@ -75,3 +75,4 @@ mvn verify -Dinvoker.test=artifact-with-license-and-ignored
 # Contributors
 - [John Allberg](https://github.com/smuda)
 - [Tibor Digana](https://github.com/Tibor17)
+- [Mads Opheim](https://github.com/madsop)
