@@ -76,10 +76,10 @@ mvn verify -Dinvoker.test=artifact-with-license-and-ignored
 - licenseFile: The location of the licenses.xml file. Defaults to src/licenses/licenses.xml
 - excludedMissingLicensesFile: The location of the file listing dependencies that should not be checked for licenses. Default blank
 - excludedScopes: A list of scopes to exclude. May be used to exclude artifacts with test or provided scope from license check.
-- failOnForbidden. Default true
-- failOnMissing. Default true
-- failOnUnknown. Default true
-- failOnWarning. Default true
+- failOnForbidden. If the plugin should fail on forbidden licenses. Default true
+- failOnMissing. If the plugin should fail on missing licenses. Default true
+- failOnUnknown. If the plugin should fail on unknown licenses. Default true
+- failOnWarning.If the plugin should fail on licenses marked as warning. Default true
 - requireAllValid: If a dependency provides several licenses, do you require all of them to be among your accepted licenses, or just one? Default true (requires all)
 - verbose: Default false
 
