@@ -110,43 +110,60 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, parent);
             toReturn.add(ayoyArtifact);
 
-            // Check the transitive artifacts
-            ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                    .setResolutionFilter(a -> {
-                        if (a.equals(artifact)) {
-                            return false;
-                        }
+            if (!shouldCheckTransitiveDependencies()) {
+                continue;
+            }
 
-                        return shouldArtifactBeIncluded(a, excludedArtifacts);
-                    })
-                    .setArtifact(artifact)
-                    .setRemoteRepositories(remoteRepositories)
-                    .setLocalRepository(localRepository)
-                    .setResolveTransitively(true);
+            List<AyoyArtifact> transitiveArtifacts =
+                    resolveTransitiveArtifacts(
+                            buildingRequest, excludedArtifacts, artifact, ayoyArtifact
+                    );
+            toReturn.addAll(transitiveArtifacts);
 
-            ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
-
-            Set<Artifact> transitiveArtifacts = resolutionResult
-                    .getArtifacts()
-                    .stream()
-                    .filter(a -> !a.equals(artifact))
-                    .filter(a -> shouldArtifactBeIncluded(a, excludedArtifacts))
-                    .collect(Collectors.toSet());
-
-            logInfoIfVerbose("Found "
-                    + transitiveArtifacts.size()
-                    + " transitive artifacts with parent "
-                    + toString(ayoyArtifact.getArtifact()));
-
-            toReturn.addAll(
-                    resolveArtifacts(
-                            transitiveArtifacts,
-                            buildingRequest,
-                            excludedArtifacts,
-                            ayoyArtifact));
         }
 
         return toReturn;
+    }
+
+    private List<AyoyArtifact> resolveTransitiveArtifacts(
+            ProjectBuildingRequest buildingRequest,
+            ExcludedMissingLicenseFile excludedArtifacts,
+            Artifact artifact,
+            AyoyArtifact ayoyArtifact
+    ) {
+        // Check the transitive artifacts
+        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+                .setResolutionFilter(a -> {
+                    if (a.equals(artifact)) {
+                        return false;
+                    }
+
+                    return shouldArtifactBeIncluded(a, excludedArtifacts);
+                })
+                .setArtifact(artifact)
+                .setRemoteRepositories(remoteRepositories)
+                .setLocalRepository(localRepository)
+                .setResolveTransitively(true);
+
+        ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
+
+        Set<Artifact> transitiveArtifacts = resolutionResult
+                .getArtifacts()
+                .stream()
+                .filter(a -> !a.equals(artifact))
+                .filter(a -> shouldArtifactBeIncluded(a, excludedArtifacts))
+                .collect(Collectors.toSet());
+
+        logInfoIfVerbose("Found "
+                + transitiveArtifacts.size()
+                + " transitive artifacts with parent "
+                + toString(ayoyArtifact.getArtifact()));
+
+        return resolveArtifacts(
+                        transitiveArtifacts,
+                        buildingRequest,
+                        excludedArtifacts,
+                        ayoyArtifact);
     }
 
     /**
@@ -328,5 +345,9 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 + artifact.getArtifactId()
                 + ":"
                 + artifact.getVersion();
+    }
+
+    protected boolean shouldCheckTransitiveDependencies() {
+        return true;
     }
 }

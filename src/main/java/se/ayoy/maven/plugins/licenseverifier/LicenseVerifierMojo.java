@@ -53,6 +53,9 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
     @Parameter(property = "verify.requireAllValid", defaultValue = "true")
     private boolean requireAllValid = true;
 
+    @Parameter(property = "verify.checkTransitiveDependencies", defaultValue = "true")
+    private boolean checkTransitiveDependencies = true;
+
     public void setLicenseFile(String licenseFile) {
         this.licenseFile = licenseFile;
     }
@@ -79,6 +82,10 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
     public void setRequireAllValid(String requireAllValid) {
         this.requireAllValid = Boolean.parseBoolean(requireAllValid);
+    }
+
+    public void setCheckTransitiveDependencies(String checkTransitiveDependencies) {
+        this.checkTransitiveDependencies = Boolean.parseBoolean(checkTransitiveDependencies);
     }
 
     /**
@@ -264,5 +271,10 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         if (this.licenseFile == null) {
             throw new NullPointerException("licenseFile cannot be null. Check your settings.");
         }
+    }
+
+    @Override
+    protected boolean shouldCheckTransitiveDependencies() {
+        return checkTransitiveDependencies;
     }
 }
