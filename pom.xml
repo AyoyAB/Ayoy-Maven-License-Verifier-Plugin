@@ -95,6 +95,15 @@
             <version>3.0.5</version>
         </dependency>
 
+        <!-- local upgrades of dependencies to dependencies -->
+        <dependency>
+            <!-- CVE-2017-1000487 -->
+            <!-- Dependency of org.apache.maven:maven-core:3.0.5 -->
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-utils</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+
         <!-- dependencies for unit test -->
         <dependency>
             <groupId>junit</groupId>

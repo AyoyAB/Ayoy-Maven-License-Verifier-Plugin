@@ -1,11 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd">
-    <suppress>
-        <notes><![CDATA[
-      file name: plexus-utils-2.0.6.jar
-      This part of maven. Should be fixed but lets get this version out first.
-      ]]></notes>
-        <gav regex="true">^org\.codehaus\.plexus:plexus-utils:.*$</gav>
-        <cve>CVE-2017-1000487</cve>
-    </suppress>
 </suppressions>
