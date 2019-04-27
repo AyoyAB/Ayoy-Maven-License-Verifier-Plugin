@@ -115,7 +115,6 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                                     excludedMissingLicenseFile))
                             .collect(Collectors.toList());
 
-
             getLog().info("Found "
                     + filteredArtifacts.size()
                     + " artifacts after filtering. Now validating their licenses with the list.");

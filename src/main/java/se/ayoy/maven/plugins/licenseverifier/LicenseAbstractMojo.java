@@ -278,7 +278,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
     }
 
-
     String getPathForRelativeFile(String filePath, String fileDescription) {
         if (filePath == null || filePath.startsWith("/")) {
             // This is not a relative file.

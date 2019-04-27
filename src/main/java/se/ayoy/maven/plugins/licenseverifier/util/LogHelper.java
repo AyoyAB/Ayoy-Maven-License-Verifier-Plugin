@@ -40,7 +40,6 @@ public final class LogHelper {
             toReturn.append("\"");
         }
 
-
         return toReturn.toString();
     }
 

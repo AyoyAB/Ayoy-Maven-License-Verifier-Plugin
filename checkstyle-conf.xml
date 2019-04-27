@@ -67,6 +67,11 @@
        <property name="message" value="Line has trailing spaces."/>
     </module>
 
+    <module name="RegexpMultiline">
+        <property name="format" value="\n\n\n" />
+        <property name="message" value="Line has two empty line in row."/>
+    </module>
+
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
     <!-- <module name="Header"> -->
