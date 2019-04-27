@@ -72,7 +72,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
      */
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
-  
+
     List<AyoyArtifact> parseArtifacts(ExcludedMissingLicenseFile excludedArtifacts) {
 
         ProjectBuildingRequest projectBuildingRequest = session.getProjectBuildingRequest();
@@ -274,7 +274,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
     }
 
-        void logInfoIfVerbose(String message) {
+    void logInfoIfVerbose(String message) {
         if (this.verbose) {
             this.getLog().info(message);
         } else {
@@ -295,7 +295,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             throw new NullPointerException("session cannot be null");
         }
     }
-
 
     String getPathForRelativeFile(String filePath, String fileDescription) {
         if (filePath == null || filePath.startsWith("/")) {
