@@ -256,7 +256,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         }
     }
 
-        void logInfoIfVerbose(String message) {
+    void logInfoIfVerbose(String message) {
         if (this.verbose) {
             this.getLog().info(message);
         } else {
