@@ -11,15 +11,28 @@
             </urls>
         </license>
         <license>
+            <name>The 3-Clause BSD License</name>
+            <urls>
+                <url>http://asm.objectweb.org/license.html</url>
+            </urls>
+        </license>
+        <license>
             <name>Apache Software License, Version 2.0</name>
             <names>
                 <name>The Apache Software License, Version 2.0</name>
                 <name>Apache Public License 2.0</name>
+                <name>Apache License Version 2.0</name>
             </names>
             <urls>
                 <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
                 <url>http://www.apache.org/licenses/LICENSE-2.0</url>
             </urls>
+        </license>
+        <license>
+            <name>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</name>
+            <names>
+                <name>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</name>
+            </names>
         </license>
         <license>
             <name>Eclipse Public License 1.0</name>
@@ -31,6 +44,12 @@
             </urls>
         </license>
         <license>
+            <name>GNU LESSER GENERAL PUBLIC LICENSE</name>
+            <urls>
+                <url>http://www.gnu.org/licenses/lgpl.txt</url>
+            </urls>
+        </license>
+        <license>
             <name>The MIT License</name>
             <names>
                 <name>The MIT License</name>
@@ -38,6 +57,12 @@
             <urls>
                 <url>http://code.google.com/p/mockito/wiki/License</url>
             </urls>
+        </license>
+        <license>
+            <name>Public Domain</name>
+            <names>
+                <name>Public Domain</name>
+            </names>
         </license>
     </valid>
     <forbidden>
