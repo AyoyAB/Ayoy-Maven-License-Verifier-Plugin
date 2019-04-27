@@ -46,7 +46,7 @@ public class LicenseInfoFile {
         if (!file.exists()) {
             throw new FileNotFoundException(filePathString);
         }
-        
+
         log.debug("Reading file " + filePathString);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 

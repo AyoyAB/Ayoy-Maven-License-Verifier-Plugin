@@ -72,7 +72,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
      */
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
-  
+
     List<AyoyArtifact> parseArtifacts(ExcludedMissingLicenseFile excludedArtifacts) {
 
         ProjectBuildingRequest projectBuildingRequest = session.getProjectBuildingRequest();
