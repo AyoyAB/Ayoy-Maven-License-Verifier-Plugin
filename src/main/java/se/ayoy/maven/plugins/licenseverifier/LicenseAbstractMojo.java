@@ -110,7 +110,6 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, parent);
             toReturn.add(ayoyArtifact);
 
-
             if (!shouldCheckTransitiveDependencies()) {
                 continue;
             }
