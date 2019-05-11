@@ -24,14 +24,13 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
+import se.ayoy.maven.plugins.licenseverifier.util.AyoyArtifactList;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static java.io.File.separator;
@@ -371,19 +370,21 @@ public class LicenseVerifierMojoTest {
 
     @Test
     public void shouldResolveOnlyTransitiveDependencies() throws Exception {
+        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
         Set<Artifact> artifactsSet = new HashSet<Artifact>();
         artifactsSet.add(artifact);
 
-        List<AyoyArtifact> trans = invokeMethod(
+        invokeMethod(
                 licenseVerifierMojo,
                 "resolveArtifacts",
+                ayoyArtifacts,
                 artifactsSet,
                 projectBuildingRequest,
                 null,
                 null);
 
-        assertThat(trans.size(), is(3));
-        List<Artifact> resultArtifactList = trans
+        assertThat(ayoyArtifacts.size(), is(3));
+        List<Artifact> resultArtifactList = ayoyArtifacts
                 .stream()
                 .map(ayoyArtifact -> ayoyArtifact.getArtifact())
                 .collect(Collectors.toList());
@@ -395,20 +396,22 @@ public class LicenseVerifierMojoTest {
 
     @Test
     public void shouldResolveOnlyCompiletimeTransitiveDependencies() throws Exception {
+        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
         Set<Artifact> artifactsSet = new HashSet<Artifact>();
         artifactsSet.add(artifact);
 
         setInternalState(licenseVerifierMojo, "excludedScopes", new String[]{"runtime"});
-        List<AyoyArtifact> trans = invokeMethod(
+        invokeMethod(
                 licenseVerifierMojo,
                 "resolveArtifacts",
+                ayoyArtifacts,
                 artifactsSet,
                 projectBuildingRequest,
                 null,
                 null);
 
-        assertThat(trans.size(), is(2));
-        List<Artifact> resultArtifactList = trans
+        assertThat(ayoyArtifacts.size(), is(2));
+        List<Artifact> resultArtifactList = ayoyArtifacts
                 .stream()
                 .map(ayoyArtifact -> ayoyArtifact.getArtifact())
                 .collect(Collectors.toList());
@@ -419,20 +422,22 @@ public class LicenseVerifierMojoTest {
 
     @Test
     public void shouldNotResolveTransitiveDependenciesIfDisabled() throws Exception {
+        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
         Set<Artifact> artifactsSet = new HashSet<>();
         artifactsSet.add(artifact);
 
         licenseVerifierMojo.setCheckTransitiveDependencies("false");
-        List<AyoyArtifact> trans = invokeMethod(
+        invokeMethod(
                 licenseVerifierMojo,
                 "resolveArtifacts",
+                ayoyArtifacts,
                 artifactsSet,
                 projectBuildingRequest,
                 null,
                 null);
 
-        assertThat(trans.size(), is(1));
-        List<Artifact> resultArtifactList = trans
+        assertThat(ayoyArtifacts.size(), is(1));
+        List<Artifact> resultArtifactList = ayoyArtifacts
                 .stream()
                 .map(AyoyArtifact::getArtifact)
                 .collect(Collectors.toList());

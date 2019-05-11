@@ -19,12 +19,12 @@ import org.apache.maven.repository.RepositorySystem;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
+import se.ayoy.maven.plugins.licenseverifier.util.AyoyArtifactList;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -83,20 +83,26 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(projectBuildingRequest);
 
         final Set<Artifact> artifacts = project.getDependencyArtifacts();
-        ArrayList<AyoyArtifact> toReturn = resolveArtifacts(artifacts, buildingRequest, excludedArtifacts, null);
+        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
+        resolveArtifacts(ayoyArtifacts, artifacts, buildingRequest, excludedArtifacts, null);
 
-        return toReturn;
+        return ayoyArtifacts;
     }
 
-    private ArrayList<AyoyArtifact> resolveArtifacts(
+    private void resolveArtifacts(
+            AyoyArtifactList ayoyArtifacts,
             Set<Artifact> artifacts,
             ProjectBuildingRequest buildingRequest,
             ExcludedMissingLicenseFile excludedArtifacts,
             AyoyArtifact parent) {
 
-        ArrayList<AyoyArtifact> toReturn = new ArrayList<>();
         for (Artifact artifact: artifacts) {
             if (!shouldArtifactBeIncluded(artifact, excludedArtifacts)) {
+                continue;
+            }
+
+            if (ayoyArtifacts.containsArtifact(artifact)) {
+                // This will make sure we only resolve each artifact once.
                 continue;
             }
 
@@ -108,24 +114,23 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
             logInfoIfVerbose(toLog);
 
             AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, parent);
-            toReturn.add(ayoyArtifact);
+            ayoyArtifacts.add(ayoyArtifact);
 
             if (!shouldCheckTransitiveDependencies()) {
                 continue;
             }
 
-            List<AyoyArtifact> transitiveArtifacts =
-                    resolveTransitiveArtifacts(
-                            buildingRequest, excludedArtifacts, artifact, ayoyArtifact
-                    );
-            toReturn.addAll(transitiveArtifacts);
-
+            resolveTransitiveArtifacts(
+                    ayoyArtifacts,
+                    buildingRequest,
+                    excludedArtifacts,
+                    artifact,
+                    ayoyArtifact);
         }
-
-        return toReturn;
     }
 
-    private List<AyoyArtifact> resolveTransitiveArtifacts(
+    private void resolveTransitiveArtifacts(
+            AyoyArtifactList ayoyArtifacts,
             ProjectBuildingRequest buildingRequest,
             ExcludedMissingLicenseFile excludedArtifacts,
             Artifact artifact,
@@ -151,6 +156,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 .getArtifacts()
                 .stream()
                 .filter(a -> !a.equals(artifact))
+                .filter(a -> !ayoyArtifacts.containsArtifact(a))
                 .filter(a -> shouldArtifactBeIncluded(a, excludedArtifacts))
                 .collect(Collectors.toSet());
 
@@ -159,11 +165,12 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 + " transitive artifacts with parent "
                 + toString(ayoyArtifact.getArtifact()));
 
-        return resolveArtifacts(
-                        transitiveArtifacts,
-                        buildingRequest,
-                        excludedArtifacts,
-                        ayoyArtifact);
+        resolveArtifacts(
+                ayoyArtifacts,
+                transitiveArtifacts,
+                buildingRequest,
+                excludedArtifacts,
+                ayoyArtifact);
     }
 
     /**
