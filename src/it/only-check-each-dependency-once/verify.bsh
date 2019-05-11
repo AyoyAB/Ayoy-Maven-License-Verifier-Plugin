@@ -1,0 +1,42 @@
+import java.io.*;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.regex.*;
+
+try {
+    File file = new File(basedir, "build.log");
+    if (!file.exists() || file.isDirectory()) {
+        System.err.println("Could not find 'build.log': " + file);
+        return false;
+    }
+
+    String log = new String(Files.readAllBytes(file.toPath()));
+
+    int startOfChild2 = log.indexOf("Building only-check-each-dependency-once-child2 1.0");
+    if (startOfChild2 == -1) {
+        // Didn't find start of build child 2
+        System.out.println("Could not find start of build for child 2");
+        return false;
+    }
+
+    // Remove everything before build of child 2
+    log = log.substring(startOfChild2);
+
+    // Find out how many times we check artifact junit:junit:4.12
+    Pattern pattern = Pattern.compile("Checking artifact.* junit:junit:4.12\n");
+    Matcher matcher = pattern.matcher(log);
+    int count = 0;
+    while (matcher.find()) {
+        count++;
+    }
+
+    System.out.println("Matches: " + count);
+    if (count > 1) {
+        throw new Exception("junit:junit:4.12 was evaluated too many times (" + count + ").");
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+    return false;
+}
+
+return true;
