@@ -65,7 +65,7 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys C6EED57A
 
 5. Prepare a release by running the following command:
 ```bash
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.6
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.7
 ```
 
 and update README.md with the new version.
