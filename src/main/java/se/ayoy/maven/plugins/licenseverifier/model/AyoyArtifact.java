@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Represents a found artifact, including license information.
  */
-public class AyoyArtifact {
+public class AyoyArtifact implements Comparable<AyoyArtifact> {
 
     private final Artifact artifact;
 
@@ -168,5 +168,46 @@ public class AyoyArtifact {
 
     private String toString(Artifact artifact) {
         return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
+    }
+
+    @Override
+    public int compareTo(AyoyArtifact o) {
+        if (o == null) {
+            throw new NullPointerException();
+        }
+
+        return toString(this.artifact).compareTo(toString(o.artifact));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+
+        if (obj.getClass() != this.getClass()) {
+            return false;
+        }
+
+        AyoyArtifact o = (AyoyArtifact) obj;
+
+        if (o.artifact == null && this.artifact == null) {
+            return true;
+        }
+
+        if (o.artifact == null || this.artifact == null) {
+            return false;
+        }
+
+        return o.artifact.equals(this.artifact);
+    }
+
+    @Override
+    public int hashCode() {
+        if (this.artifact == null) {
+            return 0;
+        }
+
+        return toString(this.artifact).hashCode();
     }
 }

@@ -120,6 +120,7 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                             .filter(artifact -> shouldArtifactBeIncluded(
                                     artifact.getArtifact(),
                                     excludedMissingLicenseFile))
+                            .sorted()
                             .collect(Collectors.toList());
 
             getLog().info("Found "
