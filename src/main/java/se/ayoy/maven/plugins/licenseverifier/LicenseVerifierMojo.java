@@ -1,19 +1,25 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.DefaultProjectBuildingRequest;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfo;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoStatusEnum;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 import se.ayoy.maven.plugins.licenseverifier.model.OverallStatus;
+import se.ayoy.maven.plugins.licenseverifier.resolver.TreeNode;
 import se.ayoy.maven.plugins.licenseverifier.util.LogHelper;
+import se.ayoy.maven.plugins.licenseverifier.visualize.TreeNodeVisualizer;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Validate the licenses against a list of known good.
@@ -53,9 +59,6 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
     @Parameter(property = "verify.requireAllValid", defaultValue = "true")
     private boolean requireAllValid = true;
 
-    @Parameter(property = "verify.checkTransitiveDependencies", defaultValue = "true")
-    private boolean checkTransitiveDependencies = true;
-
     public void setLicenseFile(String licenseFile) {
         this.licenseFile = licenseFile;
     }
@@ -84,10 +87,6 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         this.requireAllValid = Boolean.parseBoolean(requireAllValid);
     }
 
-    public void setCheckTransitiveDependencies(String checkTransitiveDependencies) {
-        this.checkTransitiveDependencies = Boolean.parseBoolean(checkTransitiveDependencies);
-    }
-
     /**
      * Execute the plugin.
      * @throws MojoExecutionException   if anything goes south,
@@ -95,84 +94,124 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
      */
     public void execute() throws MojoExecutionException {
         try {
+            getLog().info("Checking injects.");
             checkInjects();
 
+            getLog().info("Reading configuration");
             LicenseInfoFile licenseInfoFile = this.getLicenseInfoFile(
-                    getPathForRelativeFile(
-                            this.licenseFile,
-                            "LicenseInfo"));
+                getPathForRelativeFile(
+                    this.licenseFile,
+                    "LicenseInfo"));
 
             ExcludedMissingLicenseFile excludedMissingLicenseFile =
                 this.getExcludedMissingLicensesFile(
-                        getPathForRelativeFile(
-                                this.excludedMissingLicensesFile,
-                                "ExcludedMissingLicenses"));
+                    getPathForRelativeFile(
+                        this.excludedMissingLicensesFile,
+                        "ExcludedMissingLicenses"));
 
-            getLog().info("Parsing dependencies.");
-            List<AyoyArtifact> unfilteredArtifacts = parseArtifacts(excludedMissingLicenseFile);
+            getLog().info("Parsing dependencies to dependency tree.");
+            TreeNode<AyoyArtifact> tree = buildDependencyTree();
 
-            getLog().info("Found " + unfilteredArtifacts.size() + " artifacts.");
+            if (this.getVerbose()) {
+                String dependencyTreeString = TreeNodeVisualizer.visualize(tree, 0);
+                logMultiLine(dependencyTreeString, getLog());
+            }
 
-            // Filter away excluded artifacts.
-            List<AyoyArtifact> filteredArtifacts =
-                    unfilteredArtifacts
-                            .stream()
-                            .filter(artifact -> shouldArtifactBeIncluded(
-                                    artifact.getArtifact(),
-                                    excludedMissingLicenseFile))
-                            .sorted()
-                            .collect(Collectors.toList());
+            getLog().info("");
+            getLog().debug("Removing filtered artifacts from tree.");
+            removeFilteredArtifacts(tree, excludedMissingLicenseFile);
 
-            getLog().info("Found "
-                    + filteredArtifacts.size()
-                    + " artifacts after filtering. Now validating their licenses with the list.");
+            getLog().info("Parsing for licenses.");
+            ProjectBuildingRequest buildingRequest =
+                new DefaultProjectBuildingRequest(getSession().getProjectBuildingRequest());
+            checkForLicenses(buildingRequest, tree);
 
-            // Loop through all artifacts and determine status
-            filteredArtifacts = determineArtifactStatus(filteredArtifacts, licenseInfoFile);
+            getLog().info("");
+            getLog().info("Determine license status.");
+            determineArtifactStatus(tree, licenseInfoFile);
 
-            // Loop through all artifacts and get the overall status
-            OverallStatus status = calculateOverallStatus(filteredArtifacts);
+            getLog().info("");
+            getLog().info("Determine overall status.");
+            OverallStatus status = new OverallStatus();
+            calculateOverallStatus(status, tree);
 
             if (failOnMissing && status.getHasNoLicense()) {
                 throw new MojoExecutionException(
-                        "One or more artifacts is missing license information.");
+                    "One or more artifacts is missing license information.");
             }
-
             if (failOnWarning && status.getHasWarningLicense()) {
                 throw new MojoExecutionException(
-                        "One or more artifacts has licenses which is classified as warning.");
+                    "One or more artifacts has licenses which is classified as warning.");
             }
-
             if (failOnUnknown && status.getHasUnknownLicense()) {
                 throw new MojoExecutionException(
-                        "One or more artifacts has licenses which is unclassified.");
+                    "One or more artifacts has licenses which is unclassified.");
             }
-
             if (failOnForbidden && status.getHasForbiddenLicense()) {
                 throw new MojoExecutionException(
-                        "One or more artifacts has licenses which is classified as forbidden.");
+                    "One or more artifacts has licenses which is classified as forbidden.");
             }
 
             getLog().info("All licenses verified.");
         } catch (MojoExecutionException exc) {
             throw exc;
-        } catch (Exception exc) {
+        } catch (DependencyGraphBuilderException | IOException exc) {
             throw new MojoExecutionException(exc.getMessage(), exc);
+        }
+    }
+
+    private void checkForLicenses(ProjectBuildingRequest buildingRequest, TreeNode<AyoyArtifact> tree) {
+        for (TreeNode<AyoyArtifact> childNode : tree) {
+            AyoyArtifact ayoyArtifact = childNode.getData();
+            logInfoIfVerbose("Checking license for " + ayoyArtifact.toString());
+
+            List<License> licenses = getLicenses(ayoyArtifact.getArtifact(), buildingRequest);
+            if (licenses != null) {
+                ayoyArtifact.addLicenses(licenses);
+            } else {
+                getLog().info("Missing license for " + ayoyArtifact);
+            }
+
+            checkForLicenses(buildingRequest, childNode);
+        }
+    }
+
+    private void removeFilteredArtifacts(
+        TreeNode<AyoyArtifact> treeNode,
+        ExcludedMissingLicenseFile excludedArtifacts) {
+
+        for (int i = 0; i < treeNode.getChildren().size(); i++) {
+            TreeNode<AyoyArtifact> childNode = treeNode.getChildren().get(i);
+            if (!shouldArtifactBeIncluded(childNode.getData().getArtifact(), excludedArtifacts)) {
+                getLog().info("Removing dependency with children: "
+                    + childNode.getData().getArtifact().toString());
+                treeNode.removeChild(childNode);
+                i--;
+            } else {
+                // Check child
+                removeFilteredArtifacts(childNode, excludedArtifacts);
+            }
         }
     }
 
     /**
      * Determine the license status for the individual artifacts from the license information file.
-     * @param artifacts       the individual artifacts.
+     * @param treeNode        the individual artifacts.
      * @param licenseInfoFile the license information file.
      * @return the updated list of artifacts.
      */
-    private List<AyoyArtifact> determineArtifactStatus(
-            List<AyoyArtifact> artifacts,
-            LicenseInfoFile licenseInfoFile) {
+    private void determineArtifactStatus(
+        TreeNode<AyoyArtifact> treeNode,
+        LicenseInfoFile licenseInfoFile) {
 
-        for (AyoyArtifact artifactToCheck : artifacts) {
-            logInfoIfVerbose("Artifact: " + artifactToCheck);
+        for (TreeNode<AyoyArtifact> childNode : treeNode.getChildren()) {
+
+            AyoyArtifact artifactToCheck = childNode.getData();
+            logInfoIfVerbose("Artifact: "
+                + artifactToCheck
+                + " with "
+                + artifactToCheck.getLicenses().size()
+                + " licenses.");
             for (License license : artifactToCheck.getLicenses()) {
                 logInfoIfVerbose("    Fetching license info: " + LogHelper.logLicense(license));
                 LicenseInfo info = licenseInfoFile.getLicenseInfo(license.getName(), license.getUrl());
@@ -180,25 +219,35 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 if (info == null) {
                     // License does not exist in file.
                     info = new LicenseInfo(
-                            license.getName(),
-                            license.getUrl(),
-                            LicenseInfoStatusEnum.UNKNOWN);
+                        license.getName(),
+                        license.getUrl(),
+                        LicenseInfoStatusEnum.UNKNOWN);
                     licenseInfoFile.addLicenseInfo(info);
                 }
 
                 logInfoIfVerbose("    Got licenseInfo with status : " + info.getStatus());
                 artifactToCheck.addLicenseInfo(info);
+
+                determineArtifactStatus(childNode, licenseInfoFile);
             }
         }
-
-        return artifacts;
     }
 
-    private OverallStatus calculateOverallStatus(List<AyoyArtifact> filteredArtifacts) throws MojoExecutionException {
+    private void calculateOverallStatus(
+        OverallStatus status,
+        TreeNode<AyoyArtifact> node)
+        throws MojoExecutionException {
 
-        OverallStatus status = new OverallStatus();
+        if (node.getData() != null) {
+            logInfoIfVerbose("Checking overall status with " + node.getData().toString());
+        }
+        for (TreeNode<AyoyArtifact> childNode : node.getChildren()) {
+            AyoyArtifact artifact = childNode.getData();
 
-        for (AyoyArtifact artifact : filteredArtifacts) {
+            // And recursive
+            calculateOverallStatus(status, childNode);
+
+            // Determine this license.
             if (artifact.isLicenseValid(requireAllValid)) {
                 logInfoIfVerbose("VALID      " + artifact);
                 for (LicenseInfo info : artifact.getLicenseInfos()) {
@@ -218,26 +267,27 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
                 switch (info.getStatus()) {
                     case VALID:
-                        logInfoIfVerbose("VALID      " + artifact);
-                        logInfoIfVerbose("           license:  " + info);
+                        logInfoIfVerbose("VALID          " + artifact);
+                        logInfoIfVerbose("               license:  " + info);
+                        logInfoIfVerbose("               dependency chain: " + getChainString(childNode));
                         break;
                     case WARNING:
                         artifactHasWarningLicense = true;
                         getLog().warn("WARNING   " + artifact);
                         getLog().warn("          license:  " + info);
-                        getLog().warn("          dependency chain: " + artifact.getChainString());
+                        getLog().warn("          dependency chain: " + getChainString(childNode));
                         break;
                     case FORBIDDEN:
                         artifactHasForbiddenLicense = true;
                         getLog().warn("FORBIDDEN " + artifact);
                         getLog().warn("          license:  " + info);
-                        getLog().warn("          dependency chain: " + artifact.getChainString());
+                        getLog().warn("          dependency chain: " + getChainString(childNode));
                         break;
                     case UNKNOWN:
                         artifactHasUnknownLicense = true;
                         getLog().warn("UNKNOWN   " + artifact);
                         getLog().warn("          license:  " + info);
-                        getLog().warn("          dependency chain: " + artifact.getChainString());
+                        getLog().warn("          dependency chain: " + getChainString(childNode));
                         break;
                     default:
                         throw new MojoExecutionException("Unknown license status for " + artifact);
@@ -261,8 +311,36 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
                 status.setHasUnknownLicense(true);
             }
         }
+    }
 
-        return status;
+    /**
+     * Creates a string representing the dependency chain to this artifact.
+     * @param node the node to create the chain string from.
+     * @return a string representing the dependency chain to this artifact.
+     */
+    public String getChainString(TreeNode<AyoyArtifact> node) {
+        if (node.getData() == null) {
+            return "";
+        }
+
+        StringBuilder toReturn = new StringBuilder();
+
+        TreeNode<AyoyArtifact> currentNode = node;
+
+        while (currentNode.getData() != null) {
+            Artifact artifact = currentNode.getData().getArtifact();
+            String artifactInfo = " -> "
+                + artifact.getGroupId()
+                + ":"
+                + artifact.getArtifactId();
+            toReturn.insert(0, artifactInfo);
+
+            currentNode = currentNode.getParent();
+        }
+
+        toReturn.insert(0, "pom");
+
+        return toReturn.toString();
     }
 
     @Override
@@ -272,10 +350,5 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
         if (this.licenseFile == null) {
             throw new NullPointerException("licenseFile cannot be null. Check your settings.");
         }
-    }
-
-    @Override
-    protected boolean shouldCheckTransitiveDependencies() {
-        return checkTransitiveDependencies;
     }
 }

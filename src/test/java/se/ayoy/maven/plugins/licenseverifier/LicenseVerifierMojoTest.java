@@ -2,7 +2,6 @@ package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.execution.MavenSession;
@@ -14,6 +13,9 @@ import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
+import org.apache.maven.shared.dependency.graph.DependencyNode;
+import org.apache.maven.shared.dependency.graph.traversal.BuildingDependencyNodeVisitor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,24 +25,22 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
-import se.ayoy.maven.plugins.licenseverifier.util.AyoyArtifactList;
+import se.ayoy.maven.plugins.licenseverifier.resolver.LicenseDependencyNodeVisitor;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.io.File.separator;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.reflect.Whitebox.invokeMethod;
-import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseVerifierMojoTest {
@@ -69,6 +69,9 @@ public class LicenseVerifierMojoTest {
     @Mock
     private ArtifactResolutionResult resolutionResult;
 
+    @Mock
+    private DependencyGraphBuilder dependencyGraphBuilder;
+
     @InjectMocks
     private LicenseVerifierMojo licenseVerifierMojo;
 
@@ -76,12 +79,14 @@ public class LicenseVerifierMojoTest {
 
     private List<License> licenses = new ArrayList<>();
 
+    private DependencyNode rootNode;
+
     @Before
     public void before() throws Exception {
         assertNotNull("Failed to mock projectBuildingResult", projectBuildingResult);
 
         when(this.session.getProjectBuildingRequest()).thenReturn(this.projectBuildingRequest);
-        when(this.project.getDependencyArtifacts()).thenReturn(artifacts);
+        //when(this.project.getDependencyArtifacts()).thenReturn(artifacts);
         when(projectBuilder.build(any(Artifact.class), any(ProjectBuildingRequest.class)))
                 .thenReturn(this.projectBuildingResult);
         when(this.projectBuildingResult.getProject()).thenReturn(this.project);
@@ -89,7 +94,7 @@ public class LicenseVerifierMojoTest {
         when(this.project.getLicenses()).thenReturn(licenses);
 
         transitiveArtifact3.setOptional(true);
-        when(repositorySystem.resolve(Mockito.any(ArtifactResolutionRequest.class))).thenAnswer(new Answer<ArtifactResolutionResult>() {
+        /*when(repositorySystem.resolve(Mockito.any(ArtifactResolutionRequest.class))).thenAnswer(new Answer<ArtifactResolutionResult>() {
             @Override
             public ArtifactResolutionResult answer(InvocationOnMock invocationOnMock) throws Throwable {
                 ArtifactResolutionRequest arg1 = (ArtifactResolutionRequest)invocationOnMock.getArguments()[0];
@@ -121,8 +126,30 @@ public class LicenseVerifierMojoTest {
 
                 return toReturn;
             }
-        });
+        });*/
         when(resolutionResult.getArtifacts()).thenCallRealMethod();
+
+        this.rootNode = mock(DependencyNode.class);
+        when(this.rootNode.getArtifact()).thenReturn(this.artifact);
+
+        when(this.dependencyGraphBuilder.buildDependencyGraph(
+            any(ProjectBuildingRequest.class),
+            any(ArtifactFilter.class),
+            Mockito.anyCollectionOf(org.apache.maven.project.MavenProject.class)))
+            .thenReturn(rootNode);
+
+        when(this.rootNode.accept(any(LicenseDependencyNodeVisitor.class))).then(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                BuildingDependencyNodeVisitor nodeVisitor = (BuildingDependencyNodeVisitor) args[0];
+                nodeVisitor.visit(rootNode);
+                nodeVisitor.endVisit(rootNode);
+                return true;
+            }
+
+            //private void invokeRecursive(BuildingDependencyNodeVisitor nodeVisitor, )
+        });
 
         licenseVerifierMojo.setLog(log);
     }
@@ -366,84 +393,6 @@ public class LicenseVerifierMojoTest {
         } catch(MojoExecutionException exc) {
             assertEquals("One or more artifacts has licenses which is unclassified.", exc.getMessage());
         }
-    }
-
-    @Test
-    public void shouldResolveOnlyTransitiveDependencies() throws Exception {
-        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
-        Set<Artifact> artifactsSet = new HashSet<Artifact>();
-        artifactsSet.add(artifact);
-
-        invokeMethod(
-                licenseVerifierMojo,
-                "resolveArtifacts",
-                ayoyArtifacts,
-                artifactsSet,
-                projectBuildingRequest,
-                null,
-                null);
-
-        assertThat(ayoyArtifacts.size(), is(3));
-        List<Artifact> resultArtifactList = ayoyArtifacts
-                .stream()
-                .map(ayoyArtifact -> ayoyArtifact.getArtifact())
-                .collect(Collectors.toList());
-
-        assertThat(resultArtifactList, hasItem(artifact));
-        assertThat(resultArtifactList, hasItem(transitiveArtifact1));
-        assertThat(resultArtifactList, hasItem(transitiveArtifact2));
-    }
-
-    @Test
-    public void shouldResolveOnlyCompiletimeTransitiveDependencies() throws Exception {
-        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
-        Set<Artifact> artifactsSet = new HashSet<Artifact>();
-        artifactsSet.add(artifact);
-
-        setInternalState(licenseVerifierMojo, "excludedScopes", new String[]{"runtime"});
-        invokeMethod(
-                licenseVerifierMojo,
-                "resolveArtifacts",
-                ayoyArtifacts,
-                artifactsSet,
-                projectBuildingRequest,
-                null,
-                null);
-
-        assertThat(ayoyArtifacts.size(), is(2));
-        List<Artifact> resultArtifactList = ayoyArtifacts
-                .stream()
-                .map(ayoyArtifact -> ayoyArtifact.getArtifact())
-                .collect(Collectors.toList());
-
-        assertThat(resultArtifactList, hasItem(artifact));
-        assertThat(resultArtifactList, hasItem(transitiveArtifact1));
-    }
-
-    @Test
-    public void shouldNotResolveTransitiveDependenciesIfDisabled() throws Exception {
-        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
-        Set<Artifact> artifactsSet = new HashSet<>();
-        artifactsSet.add(artifact);
-
-        licenseVerifierMojo.setCheckTransitiveDependencies("false");
-        invokeMethod(
-                licenseVerifierMojo,
-                "resolveArtifacts",
-                ayoyArtifacts,
-                artifactsSet,
-                projectBuildingRequest,
-                null,
-                null);
-
-        assertThat(ayoyArtifacts.size(), is(1));
-        List<Artifact> resultArtifactList = ayoyArtifacts
-                .stream()
-                .map(AyoyArtifact::getArtifact)
-                .collect(Collectors.toList());
-
-        assertThat(resultArtifactList, hasItem(artifact));
-
     }
 
     private Artifact artifact = new DefaultArtifact(

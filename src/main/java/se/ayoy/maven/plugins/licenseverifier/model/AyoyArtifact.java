@@ -84,35 +84,6 @@ public class AyoyArtifact implements Comparable<AyoyArtifact> {
     }
 
     /**
-     * Creates a string representing the dependency chain to this artifact.
-     * @return a string representing the dependency chain to this artifact.
-     */
-    public String getChainString() {
-        StringBuilder toReturn = new StringBuilder();
-
-        if (this.parent != null) {
-            toReturn.append("pom");
-
-            AyoyArtifact activeParent = this.parent;
-            while (activeParent != null) {
-                toReturn.append(" -> ");
-                toReturn.append(activeParent.artifact.getGroupId());
-                toReturn.append(":");
-                toReturn.append(activeParent.artifact.getArtifactId());
-
-                activeParent = activeParent.getParent();
-            }
-
-            toReturn.append(" -> ");
-            toReturn.append(artifact.getGroupId());
-            toReturn.append(":");
-            toReturn.append(artifact.getArtifactId());
-        }
-
-        return toReturn.toString();
-    }
-
-    /**
      * Adds a license info about the licenses for the artifact.
      * @param info the license information.
      */
@@ -147,7 +118,7 @@ public class AyoyArtifact implements Comparable<AyoyArtifact> {
     }
 
     public List<LicenseInfo> getLicenseInfos() {
-        return new ArrayList<LicenseInfo>(this.licenseInfos);
+        return new ArrayList<>(this.licenseInfos);
     }
 
     /**
