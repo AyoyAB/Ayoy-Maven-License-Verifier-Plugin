@@ -5,8 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>se.ayoy.maven-plugins.its</groupId>
-    <artifactId>optional-dependency-with-version</artifactId>
+    <artifactId>artifact-with-optional-dependency-with-version</artifactId>
     <version>1.0</version>
+
+    <licenses>
+        <license>
+            <name>Parent POM license name</name>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>

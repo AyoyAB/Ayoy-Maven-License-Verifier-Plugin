@@ -16,7 +16,7 @@ try {
         return false;
     }
 
-    if (!log.contains("Found 0 artifacts after filtering. Now validating their licenses with the list.")) {
+    if (!log.contains("Excluding artifact, found in configuration: org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final")) {
         System.err.println("Error: Failed with at least one artifact.");
         return false;
     }

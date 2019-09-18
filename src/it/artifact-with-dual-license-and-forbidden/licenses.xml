@@ -3,6 +3,12 @@
 <licenses>
     <valid>
         <license>
+            <name>Parent POM license name</name>
+            <names>
+                <name>Parent POM license name</name>
+            </names>
+        </license>
+        <license>
             <name>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</name>
             <names>
                 <name>COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0</name>

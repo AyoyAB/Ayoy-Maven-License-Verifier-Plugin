@@ -11,8 +11,8 @@ try {
 
     String log = new String(Files.readAllBytes(file.toPath()));
 
-    if (!log.contains("[INFO] Excluding optional artifact: org.slf4j:slf4j-api:1.7.16")) {
-        System.err.println("Error: Should find log of excluding optional artifacts.");
+    if (log.contains("org.slf4j:slf4j-api")) {
+        System.err.println("Error: Should not find log optional artifacts.");
         return false;
     }
 
