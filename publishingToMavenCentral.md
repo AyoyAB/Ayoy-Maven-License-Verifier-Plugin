@@ -65,7 +65,7 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys C6EED57A
 
 5. Prepare a release by running the following command:
 ```bash
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.7
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.1.0
 ```
 
 and update README.md with the new version.
@@ -77,9 +77,9 @@ and update README.md with the new version.
 mvn clean deploy -Prelease
 ```
 
-8. Tag with "v1.0.7" on the correct commit.
+8. Tag with "v1.1.0" on the correct commit.
 
 9. Restore version to SNAPSHOT:
 ```bash
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.0.8-SNAPSHOT
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=1.1.0-SNAPSHOT
 ```
