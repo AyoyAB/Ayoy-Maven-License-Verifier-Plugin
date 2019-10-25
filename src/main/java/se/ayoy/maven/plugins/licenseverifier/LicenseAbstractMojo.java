@@ -1,13 +1,11 @@
 package se.ayoy.maven.plugins.licenseverifier;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
@@ -15,47 +13,49 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
+import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
+import org.apache.maven.shared.dependency.graph.DependencyNode;
+import org.apache.maven.shared.dependency.graph.traversal.BuildingDependencyNodeVisitor;
 import se.ayoy.maven.plugins.licenseverifier.LicenseInfo.LicenseInfoFile;
 import se.ayoy.maven.plugins.licenseverifier.MissingLicenseInfo.ExcludedMissingLicenseFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
-import se.ayoy.maven.plugins.licenseverifier.util.AyoyArtifactList;
+import se.ayoy.maven.plugins.licenseverifier.resolver.LicenseDependencyNodeVisitor;
+import se.ayoy.maven.plugins.licenseverifier.resolver.TreeNode;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 abstract class LicenseAbstractMojo extends AbstractMojo {
+    @SuppressWarnings("unused")
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
+    @SuppressWarnings("unused")
     @Component
     private ProjectBuilder projectBuilder;
 
     /**
-     * @since 1.0.4
+     * The dependency tree builder to use.
      */
-    @Component
-    private RepositorySystem repositorySystem;
+    @SuppressWarnings("unused")
+    @Component(hint = "default")
+    private DependencyGraphBuilder dependencyGraphBuilder;
 
     /**
-     * ArtifactRepository of the localRepository directory.
-     * @since 1.0.4
+     * Contains the full list of projects in the reactor.
      */
-    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
-    private ArtifactRepository localRepository;
+    @SuppressWarnings("unused")
+    @Parameter(defaultValue = "${reactorProjects}", readonly = true, required = true)
+    private List<MavenProject> reactorProjects;
 
-    /**
-     * The remote plugin repositories declared in the POM.
-     * @since 1.0.4
-     */
-    @Parameter(defaultValue = "${project.pluginArtifactRepositories}")
-    private List<ArtifactRepository> remoteRepositories;
-
+    @SuppressWarnings("unused")
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
 
@@ -73,104 +73,42 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
     @Parameter(property = "excludedScopes")
     private String[] excludedScopes;
 
-    List<AyoyArtifact> parseArtifacts(ExcludedMissingLicenseFile excludedArtifacts) {
-
-        ProjectBuildingRequest projectBuildingRequest = session.getProjectBuildingRequest();
-        if (projectBuildingRequest == null) {
-            throw new NullPointerException("Got null ProjectBuildingRequest from session.");
-        }
-
-        ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(projectBuildingRequest);
-
-        final Set<Artifact> artifacts = project.getDependencyArtifacts();
-        AyoyArtifactList ayoyArtifacts = new AyoyArtifactList();
-        resolveArtifacts(ayoyArtifacts, artifacts, buildingRequest, excludedArtifacts, null);
-
-        return ayoyArtifacts;
+    MavenProject getProject() {
+        return this.project;
     }
 
-    private void resolveArtifacts(
-            AyoyArtifactList ayoyArtifacts,
-            Set<Artifact> artifacts,
-            ProjectBuildingRequest buildingRequest,
-            ExcludedMissingLicenseFile excludedArtifacts,
-            AyoyArtifact parent) {
-
-        for (Artifact artifact: artifacts) {
-            if (!shouldArtifactBeIncluded(artifact, excludedArtifacts)) {
-                continue;
-            }
-
-            if (ayoyArtifacts.containsArtifact(artifact)) {
-                // This will make sure we only resolve each artifact once.
-                continue;
-            }
-
-            String toLog = "Checking artifact ";
-            if (parent != null) {
-                toLog += parent.getParentString() + " -> ";
-            }
-            toLog += toString(artifact);
-            logInfoIfVerbose(toLog);
-
-            AyoyArtifact ayoyArtifact = toAyoyArtifact(artifact, buildingRequest, parent);
-            ayoyArtifacts.add(ayoyArtifact);
-
-            if (!shouldCheckTransitiveDependencies()) {
-                continue;
-            }
-
-            resolveTransitiveArtifacts(
-                    ayoyArtifacts,
-                    buildingRequest,
-                    excludedArtifacts,
-                    artifact,
-                    ayoyArtifact);
-        }
+    MavenSession getSession() {
+        return this.session;
     }
 
-    private void resolveTransitiveArtifacts(
-            AyoyArtifactList ayoyArtifacts,
-            ProjectBuildingRequest buildingRequest,
-            ExcludedMissingLicenseFile excludedArtifacts,
-            Artifact artifact,
-            AyoyArtifact ayoyArtifact
-    ) {
-        // Check the transitive artifacts
-        ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                .setResolutionFilter(a -> {
-                    if (a.equals(artifact)) {
-                        return false;
-                    }
+    /**
+     * Serializes the specified dependency tree to a string.
+     *
+     * @return the dependency tree.
+     */
+    TreeNode<AyoyArtifact> buildDependencyTree() throws DependencyGraphBuilderException {
 
-                    return shouldArtifactBeIncluded(a, excludedArtifacts);
-                })
-                .setArtifact(artifact)
-                .setRemoteRepositories(remoteRepositories)
-                .setLocalRepository(localRepository)
-                .setResolveTransitively(true);
+        ProjectBuildingRequest buildingRequest =
+            new DefaultProjectBuildingRequest(getSession().getProjectBuildingRequest());
 
-        ArtifactResolutionResult resolutionResult = repositorySystem.resolve(request);
+        buildingRequest.setProject(getProject());
 
-        Set<Artifact> transitiveArtifacts = resolutionResult
-                .getArtifacts()
-                .stream()
-                .filter(a -> !a.equals(artifact))
-                .filter(a -> !ayoyArtifacts.containsArtifact(a))
-                .filter(a -> shouldArtifactBeIncluded(a, excludedArtifacts))
-                .collect(Collectors.toSet());
+        // non-verbose mode use dependency graph component, which gives consistent results with Maven version
+        // running
+        DependencyNode rootDependencyNode = dependencyGraphBuilder.buildDependencyGraph(
+            buildingRequest,
+            null,
+            reactorProjects);
 
-        logInfoIfVerbose("Found "
-                + transitiveArtifacts.size()
-                + " transitive artifacts with parent "
-                + toString(ayoyArtifact.getArtifact()));
+        TreeNode<AyoyArtifact> tree = new TreeNode<AyoyArtifact>(null);
+        LicenseDependencyNodeVisitor nodeVisitor = new LicenseDependencyNodeVisitor(tree);
 
-        resolveArtifacts(
-                ayoyArtifacts,
-                transitiveArtifacts,
-                buildingRequest,
-                excludedArtifacts,
-                ayoyArtifact);
+        BuildingDependencyNodeVisitor dependencyNodeVisitor =
+            new BuildingDependencyNodeVisitor(nodeVisitor);
+
+        rootDependencyNode.accept(dependencyNodeVisitor);
+
+        return tree;
     }
 
     /**
@@ -179,7 +117,11 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
      * @param excludedArtifacts the list of excluded artifacts.
      * @return true if included.
      */
-    protected boolean shouldArtifactBeIncluded(Artifact a, ExcludedMissingLicenseFile excludedArtifacts) {
+    boolean shouldArtifactBeIncluded(Artifact a, ExcludedMissingLicenseFile excludedArtifacts) {
+        if (a == null) {
+            return false;
+        }
+
         if (a.isOptional()) {
             logInfoIfVerbose("Excluding optional artifact: " + toString(a));
             return false;
@@ -201,13 +143,7 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
         return true;
     }
 
-    private AyoyArtifact toAyoyArtifact(
-        Artifact artifact,
-        ProjectBuildingRequest buildingRequest,
-        AyoyArtifact parentArtifact) {
-        AyoyArtifact licenseInfo = new AyoyArtifact(artifact, parentArtifact);
-
-        getLog().debug("Getting license for " + artifact.toString());
+    List<License> getLicenses(Artifact artifact, ProjectBuildingRequest buildingRequest) {
         try {
             buildingRequest.setProject(null);
 
@@ -221,12 +157,13 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 throw new NullPointerException("Licenses is null, from mavenProject from " + artifact);
             }
 
-            licenseInfo.addLicenses(licenses);
+            return licenses;
         } catch (ProjectBuildingException e) {
             getLog().error("Could not build the project for " + artifact.toString());
             getLog().error(e.getMessage());
         }
-        return licenseInfo;
+
+        return null;
     }
 
     private static boolean matchesAnyScope(Artifact artifact, String... scopes) {
@@ -242,6 +179,10 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
 
     public void setVerbose(String verbose) {
         this.verbose = Boolean.parseBoolean(verbose);
+    }
+
+    public boolean getVerbose() {
+        return this.verbose;
     }
 
     LicenseInfoFile getLicenseInfoFile(String licenseFile) throws MojoExecutionException {
@@ -354,7 +295,23 @@ abstract class LicenseAbstractMojo extends AbstractMojo {
                 + artifact.getVersion();
     }
 
-    protected boolean shouldCheckTransitiveDependencies() {
-        return true;
+    /**
+     * Writes the specified string to the log at info level.
+     *
+     * @param string the string to write
+     * @param log where to log information.
+     * @throws IOException if an I/O error occurs
+     */
+    static synchronized void logMultiLine(String string, Log log)
+        throws IOException {
+        BufferedReader reader = new BufferedReader(new StringReader(string));
+
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            log.info(line);
+        }
+
+        reader.close();
     }
 }

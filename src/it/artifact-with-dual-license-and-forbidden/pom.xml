@@ -8,6 +8,12 @@
     <artifactId>unverified-license</artifactId>
     <version>1.0</version>
 
+    <licenses>
+        <license>
+            <name>Parent POM license name</name>
+        </license>
+    </licenses>
+
     <dependencies>
         <dependency>
             <groupId>javax.xml.stream</groupId>
