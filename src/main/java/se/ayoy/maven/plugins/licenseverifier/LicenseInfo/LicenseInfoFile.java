@@ -8,12 +8,16 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException; // catching unsupported features
+import se.ayoy.maven.plugins.licenseverifier.LicenseVerifierMojo;
 
 /**
  * Represents the file in which licenses are categorized.
@@ -43,10 +47,22 @@ public class LicenseInfoFile {
                         + filePathString);
 
         File file = new File(filePathString);
+        InputStream inputStream;
         if (!file.exists()) {
-            throw new FileNotFoundException(filePathString);
+            // lets try to get it as resource
+            URL url = LicenseVerifierMojo.class.getResource(filePathString);
+            if (url == null) {
+                this.log.warn("PATH not found!!!");
+                throw new FileNotFoundException(filePathString);
+            }
+            try {
+                inputStream = url.openStream();
+            } catch (IOException ex) {
+                throw new FileNotFoundException(filePathString);
+            }
+        } else {
+            inputStream = new FileInputStream(file);
         }
-
         log.debug("Reading file " + filePathString);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
@@ -62,7 +78,7 @@ public class LicenseInfoFile {
             dbf.setExpandEntityReferences(false);
 
             DocumentBuilder builder = dbf.newDocumentBuilder();
-            Document document = builder.parse(file);
+            Document document = builder.parse(inputStream);
 
             parseLicenses(document, "valid", LicenseInfoStatusEnum.VALID);
             parseLicenses(document, "warning", LicenseInfoStatusEnum.WARNING);
