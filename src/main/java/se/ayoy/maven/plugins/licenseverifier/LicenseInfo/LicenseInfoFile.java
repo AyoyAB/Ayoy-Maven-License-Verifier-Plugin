@@ -52,7 +52,6 @@ public class LicenseInfoFile {
             // lets try to get it as resource
             URL url = LicenseVerifierMojo.class.getResource(filePathString);
             if (url == null) {
-                this.log.warn("PATH not found!!!");
                 throw new FileNotFoundException(filePathString);
             }
             try {
