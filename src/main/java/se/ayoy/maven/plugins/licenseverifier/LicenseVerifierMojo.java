@@ -58,6 +58,9 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
     @Parameter(property = "verify.requireAllValid", defaultValue = "true")
     private boolean requireAllValid = true;
+    
+    @Parameter(property = "verify.skip", defaultValue = "false")
+    private boolean skip = false;
 
     public void setLicenseFile(String licenseFile) {
         this.licenseFile = licenseFile;
@@ -86,6 +89,10 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
     public void setRequireAllValid(String requireAllValid) {
         this.requireAllValid = Boolean.parseBoolean(requireAllValid);
     }
+    
+    public void setSkip(String skip) {
+        this.skip = Boolean.parseBoolean(skip);
+    }
 
     /**
      * Execute the plugin.
@@ -94,6 +101,10 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
      */
     public void execute() throws MojoExecutionException {
         try {
+            if(skip) {
+                getLog().info("Skipping the license analysis.");
+                return;
+            }
             getLog().info("Checking injects.");
             checkInjects();
 
