@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<missing>
+    <dependency>
+        <groupId>com.oracle.weblogic</groupId>
+        <artifactId>wlthint3client</artifactId>
+        <version>12.2.1-2-1</version>
+    </dependency>
+</missing>

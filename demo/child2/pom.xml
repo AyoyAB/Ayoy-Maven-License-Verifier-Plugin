@@ -6,9 +6,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>se.ayoy.maven-plugins.demo</groupId>
-    <artifactId>demo-parent</artifactId>
+    <artifactId>child2</artifactId>
     <version>1.0.0</version>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>se.ayoy.maven-plugins.demo</groupId>
+        <artifactId>demo-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>A demo of multi module maven project with Ayoy-Maven-License-Verifier-Plugin.</description>
@@ -23,12 +30,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-
-    <modules>
-        <module>LicensesProject</module>
-        <module>child1</module>
-        <module>child2</module>
-    </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -51,12 +52,12 @@
     <dependencies>
     </dependencies>
 
-    <build>
+<build>
         <plugins>
             <plugin>
                 <groupId>se.ayoy.maven-plugins</groupId>
                 <artifactId>ayoy-license-verifier-maven-plugin</artifactId>
-                <version>1.1.0</version>
+                <version>1.1.1-SNAPSHOT</version>
                 <executions>
                     <execution>
                         <phase>compile</phase>
@@ -66,20 +67,19 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <licenseFile>licenses/licenses.xml</licenseFile>
-                    <excludedMissingLicensesFile>licenses/allowedMissingLicense.xml</excludedMissingLicensesFile>
+                    <licenseFile>licenses.xml</licenseFile>
+                    <excludedMissingLicensesFile>allowedMissingLicense.xml</excludedMissingLicensesFile>
                     <failOnForbidden>true</failOnForbidden>
                     <failOnMissing>true</failOnMissing>
                     <failOnUnknown>true</failOnUnknown>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <configLocation>checkstyle.xml</configLocation>
-                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>se.ayoy.maven-plugins.demo</groupId>
+                        <artifactId>LicensesProject</artifactId>
+                        <version>1.0.0</version>  
+                    </dependency>                 
+                </dependencies>
             </plugin>
         </plugins>
     </build>
