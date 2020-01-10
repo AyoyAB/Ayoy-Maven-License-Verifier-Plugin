@@ -238,10 +238,9 @@ public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
                 logInfoIfVerbose("    Got licenseInfo with status : " + info.getStatus());
                 artifactToCheck.addLicenseInfo(info);
-
             }
-            determineArtifactStatus(childNode, licenseInfoFile);
 
+            determineArtifactStatus(childNode, licenseInfoFile);
         }
     }
 
