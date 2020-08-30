@@ -82,11 +82,18 @@
     <!-- Filter to be able to use suppress annotations -->
     <module name="SuppressWarningsFilter" />
 
+    <!-- See https://checkstyle.sourceforge.io/config_sizes.html#LineLength -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+    </module>
+
     <module name="TreeWalker">
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <module name="JavadocMethod">
             <property name="scope" value="public"/>
+        </module>
+        <module name="MissingJavadocMethodCheck">
             <property name="allowMissingPropertyJavadoc" value="true"/>
         </module>
         <module name="JavadocType">
@@ -120,10 +127,6 @@
 
 
         <!-- Checks for Size Violations.                    -->
-        <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="120"/>
-        </module>
         <module name="MethodLength"/>
         <module name="ParameterNumber">
             <property name="max" value="10"/>
