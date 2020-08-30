@@ -10,15 +10,18 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException; // catching unsupported features
 
+import se.ayoy.maven.plugins.licenseverifier.LicenceFile;
+
 /**
  * Represents the file in which licenses are categorized.
  */
-public class LicenseInfoFile {
+public class LicenseInfoFile extends LicenceFile {
 
     private ArrayList<LicenseInfo> licenseInfos = new ArrayList<LicenseInfo>();
     private Log log;
@@ -43,9 +46,7 @@ public class LicenseInfoFile {
                         + filePathString);
 
         File file = new File(filePathString);
-        if (!file.exists()) {
-            throw new FileNotFoundException(filePathString);
-        }
+        InputStream inputStream = getInputStreamFromFileOrResource(file, filePathString);
 
         log.debug("Reading file " + filePathString);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -62,7 +63,7 @@ public class LicenseInfoFile {
             dbf.setExpandEntityReferences(false);
 
             DocumentBuilder builder = dbf.newDocumentBuilder();
-            Document document = builder.parse(file);
+            Document document = builder.parse(inputStream);
 
             parseLicenses(document, "valid", LicenseInfoStatusEnum.VALID);
             parseLicenses(document, "warning", LicenseInfoStatusEnum.WARNING);

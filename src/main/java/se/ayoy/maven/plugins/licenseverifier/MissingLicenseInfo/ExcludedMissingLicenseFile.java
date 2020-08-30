@@ -7,6 +7,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import se.ayoy.maven.plugins.licenseverifier.LicenceFile;
 import se.ayoy.maven.plugins.licenseverifier.model.AyoyArtifact;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -15,12 +16,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 /**
  * Parses the file for exclusions of missing license information.
  */
-public class ExcludedMissingLicenseFile {
+public class ExcludedMissingLicenseFile extends LicenceFile {
     private ArrayList<ExcludedMissingLicense> missingInfos = new ArrayList<ExcludedMissingLicense>();
     private Log log;
 
@@ -43,9 +45,7 @@ public class ExcludedMissingLicenseFile {
             "Path to file with dependencies to ignore (without licenses) is "
             + filePathString);
         File file = new File(filePathString);
-        if (!file.exists()) {
-            throw new FileNotFoundException(filePathString);
-        }
+        InputStream inputStream = this.getInputStreamFromFileOrResource(file, filePathString);
 
         log.debug("Reading file " + filePathString);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -62,7 +62,7 @@ public class ExcludedMissingLicenseFile {
             dbf.setExpandEntityReferences(false);
 
             DocumentBuilder builder = dbf.newDocumentBuilder();
-            Document document = builder.parse(file);
+            Document document = builder.parse(inputStream);
 
             parseInfos(document);
 

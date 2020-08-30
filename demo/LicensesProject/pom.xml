@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>se.ayoy.maven-plugins.demo</groupId>
+    <artifactId>LicensesProject</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>se.ayoy.maven-plugins.demo</groupId>
+        <artifactId>demo-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <name>LicensesProject</name>
+    <description>A demo of multi module maven project with Ayoy-Maven-License-Verifier-Plugin.</description>
+    <url>https://github.com/AyoyAB/Ayoy-Maven-License-Verifier-Plugin/tree/master/demo</url>
+
+    <inceptionYear>2018</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <minMavenVersion>3.0.5</minMavenVersion>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <developers>
+        <developer>
+            <id>smuda</id>
+            <name>John Allberg</name>
+            <email>john+github@ayoy.se</email>
+            <url>https://www.ayoy.se</url>
+            <organization>Ayoy AB</organization>
+            <organizationUrl>https://www.ayoy.se</organizationUrl>
+        </developer>
+    </developers>
+
+    <dependencies>
+    </dependencies>
+
+
+</project>

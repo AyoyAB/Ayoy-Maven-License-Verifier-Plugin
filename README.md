@@ -64,6 +64,24 @@ mvn clean install
 
 You have now installed the snapshot-version.
 
+# Adding license info on a Maven Artifact
+Sometimes, to use the same files for many projects or to separate Maven build files from code files, do you want to put the files on other project and import it during the build. 
+It is possible to do this with license info and allowed missing licenses files.
+In order to do this, you need to add to your plugin configuration a dependency section with the artifact containing the files, like this : 
+
+```
+                    <dependency>
+                        <groupId>com.mycompany</groupId>
+                        <artifactId>AyoyLicenseManagement</artifactId>
+                        <version>1.0.0</version>  
+                    </dependency> 
+```
+Then, the project containing the files should : 
+1. Be packaged as a jar
+2. Contain on folder src/main/resources/se/ayoy/maven/plugins/licenseverifier the license and exclusion files
+
+On demo module, the project child2 performs an analysis using the files of the project LicenseManagement. 
+
 # Running tests
 
 Run a single integration test like this:
