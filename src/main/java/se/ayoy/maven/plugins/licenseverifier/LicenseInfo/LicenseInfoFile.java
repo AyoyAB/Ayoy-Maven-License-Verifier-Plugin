@@ -8,21 +8,20 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException; // catching unsupported features
-import se.ayoy.maven.plugins.licenseverifier.LicenseVerifierMojo;
+
+import se.ayoy.maven.plugins.licenseverifier.LicenceFile;
 
 /**
  * Represents the file in which licenses are categorized.
  */
-public class LicenseInfoFile {
+public class LicenseInfoFile extends LicenceFile {
 
     private ArrayList<LicenseInfo> licenseInfos = new ArrayList<LicenseInfo>();
     private Log log;
@@ -47,21 +46,8 @@ public class LicenseInfoFile {
                         + filePathString);
 
         File file = new File(filePathString);
-        InputStream inputStream;
-        if (!file.exists()) {
-            // lets try to get it as resource
-            URL url = LicenseVerifierMojo.class.getResource(filePathString);
-            if (url == null) {
-                throw new FileNotFoundException(filePathString);
-            }
-            try {
-                inputStream = url.openStream();
-            } catch (IOException ex) {
-                throw new FileNotFoundException(filePathString);
-            }
-        } else {
-            inputStream = new FileInputStream(file);
-        }
+        InputStream inputStream = getInputStreamFromFileOrResource(file, filePathString);
+
         log.debug("Reading file " + filePathString);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
