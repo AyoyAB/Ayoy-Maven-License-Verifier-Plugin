@@ -51,12 +51,19 @@
             </urls>
         </license>
         <license>
+            <name>GNU General Public License, version 2 (GPL2), with the classpath exception</name>
+            <urls>
+                <url>http://www.gnu.org/software/classpath/license.html</url>
+            </urls>
+        </license>
+        <license>
             <name>The MIT License</name>
             <names>
                 <name>The MIT License</name>
             </names>
             <urls>
                 <url>http://code.google.com/p/mockito/wiki/License</url>
+                <url>http://www.opensource.org/licenses/mit-license.php</url>
             </urls>
         </license>
         <license>

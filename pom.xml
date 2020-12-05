@@ -109,6 +109,18 @@
             <artifactId>plexus-utils</artifactId>
             <version>3.2.0</version>
         </dependency>
+        <dependency>
+            <!-- CVE-2018-10237 -->
+            <!--
+              Dependency of
+              org.apache.maven:maven-core:jar:3.2.5
+              -> org.sonatype.sisu:sisu-guice:jar:no_aop:3.2.3
+                 -> com.google.guava:guava:jar:16.0.1
+            -->
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>24.1.1-jre</version>
+        </dependency>
 
         <!-- dependencies for unit test -->
         <dependency>
