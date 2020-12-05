@@ -3,6 +3,7 @@ package se.ayoy.maven.plugins.licenseverifier;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.License;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.InstantiationStrategy;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
@@ -25,7 +26,7 @@ import java.util.List;
  * Validate the licenses against a list of known good.
  *
  */
-@Mojo(name = "verify")
+@Mojo(name = "verify", instantiationStrategy = InstantiationStrategy.PER_LOOKUP, threadSafe = true)
 public class LicenseVerifierMojo extends LicenseAbstractMojo {
 
     /**
