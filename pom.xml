@@ -107,7 +107,7 @@
             <!-- Dependency of org.apache.maven:maven-core:3.0.5 -->
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <!-- CVE-2018-10237 -->
@@ -297,7 +297,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.36</version>
+                        <version>8.38</version>
                     </dependency>
                 </dependencies>
                 <executions>
