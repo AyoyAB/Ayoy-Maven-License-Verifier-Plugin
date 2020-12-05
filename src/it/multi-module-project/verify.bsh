@@ -30,7 +30,7 @@ try {
 
     String log = new String(Files.readAllBytes(file.toPath()));
 
-    if (!log.contains("junit:junit:4.12")) {
+    if (!log.contains("junit:junit:4.13.1")) {
         return false;
     }
 
@@ -42,7 +42,7 @@ try {
         return false;
     }
 
-    if (!log.contains("VALID      artifact junit:junit:jar:4.12:compile with licenses: \"Eclipse Public License 1.0\"")) {
+    if (!log.contains("VALID      artifact junit:junit:jar:4.13.1:compile with licenses: \"Eclipse Public License 1.0\"")) {
         return false;
     }
 
