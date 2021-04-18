@@ -100,6 +100,7 @@ mvn verify -Dinvoker.test=artifact-with-license-and-ignored
 - failOnWarning.If the plugin should fail on licenses marked as warning. Default true
 - requireAllValid: If a dependency provides several licenses, do you require all of them to be among your accepted licenses, or just one? Default true (requires all)
 - verbose: Default false
+- skip: Default false
 
 # Contributors
 - [John Allberg](https://github.com/smuda)
