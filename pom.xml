@@ -111,6 +111,7 @@
         </dependency>
         <dependency>
             <!-- CVE-2018-10237 -->
+            <!-- CVE-2020-8908 -->
             <!--
               Dependency of
               org.apache.maven:maven-core:jar:3.2.5
@@ -119,7 +120,7 @@
             -->
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>24.1.1-jre</version>
+            <version>30.0-jre</version>
         </dependency>
 
         <!-- dependencies for unit test -->
